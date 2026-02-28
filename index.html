@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Sec+ Cards" />
+  <meta name="theme-color" content="#131F24" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <title>Sec+ Cards — SY0-701</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body, #root { height: 100%; width: 100%; background: #131F24; overflow-x: hidden; }
+    body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+    /* Safe area padding for notched iPhones */
+    #root { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+
+  <script type="text/babel" data-type="module">
+    const { useState, useEffect, useCallback, useRef } = React;
+
+/* ───────────── Compact card data loader ───────────── */
+const SECTIONS_META = [
+  { id:"fundamentals", title:"IT Security Fundamentals", icon:"🛡️", domain:"Domain 1: General Security Concepts", color:"#58CC02" },
+  { id:"threats", title:"Threats & Attacks", icon:"⚠️", domain:"Domain 2: Threats & Mitigations", color:"#FF4B4B" },
+  { id:"vulnerabilities", title:"Vulnerabilities", icon:"🔓", domain:"Domain 2: Threats & Mitigations", color:"#FF9600" },
+  { id:"ransomware", title:"Ransomware & Malware", icon:"💀", domain:"Domain 2: Threats & Mitigations", color:"#CE82FF" },
+  { id:"onpath", title:"On-Path & Network Attacks", icon:"🌐", domain:"Domain 2: Threats & Mitigations", color:"#1CB0F6" },
+  { id:"encryption", title:"Encryption & Cryptography", icon:"🔐", domain:"Domain 3: Security Architecture", color:"#FF86D0" },
+  { id:"socialeng", title:"Social Engineering", icon:"🎭", domain:"Domain 2: Threats & Mitigations", color:"#FFC800" },
+  { id:"securing", title:"Securing IT Assets", icon:"🏰", domain:"Domain 3: Security Architecture", color:"#58CC02" },
+  { id:"architecture", title:"Security Architecture", icon:"🏗️", domain:"Domain 3: Security Architecture", color:"#1CB0F6" },
+  { id:"techniques", title:"Common Security Techniques", icon:"🔧", domain:"Domain 3: Security Architecture", color:"#FF9600" },
+  { id:"vulnmgmt", title:"Vulnerability Management", icon:"🔍", domain:"Domain 4: Security Operations", color:"#CE82FF" },
+  { id:"monitoring", title:"Alerting, Monitoring & SIEM", icon:"📊", domain:"Domain 4: Security Operations", color:"#FF4B4B" },
+  { id:"email", title:"Email & Endpoint Security", icon:"📧", domain:"Domain 4: Security Operations", color:"#1CB0F6" },
+  { id:"iam", title:"Identity & Access Management", icon:"🪪", domain:"Domain 4: Security Operations", color:"#58CC02" },
+  { id:"automation", title:"Automation & Orchestration", icon:"⚙️", domain:"Domain 4: Security Operations", color:"#FFC800" },
+  { id:"incident", title:"Incident Response", icon:"🚨", domain:"Domain 4: Security Operations", color:"#FF4B4B" },
+  { id:"governance", title:"Governance & Compliance", icon:"📋", domain:"Domain 5: Program Management", color:"#CE82FF" },
+  { id:"physical", title:"Physical Security", icon:"🏢", domain:"Domain 5: Program Management", color:"#FF9600" },
+  { id:"resilience", title:"Resilience & Recovery", icon:"🔄", domain:"Domain 5: Program Management", color:"#1CB0F6" },
+];
+
+const DOMAIN_COLORS = {
+  "Domain 1: General Security Concepts": "#58CC02",
+  "Domain 2: Threats & Mitigations": "#FF4B4B",
+  "Domain 3: Security Architecture": "#1CB0F6",
+  "Domain 4: Security Operations": "#CE82FF",
+  "Domain 5: Program Management": "#FF9600",
+};
+
+/* ───────────── Daily Streak Helpers ───────────── */
+const getToday = () => new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
+
+const getYesterday = () => {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().split("T")[0];
+};
+
+/* ───────────── App ───────────── */
+function SecurityPlusApp() {
+  const [view, setView] = useState("home"); // home | section | study
+  const [selectedSection, setSelectedSection] = useState(null);
+  const [cardData, setCardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [progress, setProgress] = useState({});
+  const [currentCard, setCurrentCard] = useState(0);
+  const [flipped, setFlipped] = useState(false);
+  const [mastered, setMastered] = useState({});
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedDomain, setSelectedDomain] = useState(null);
+
+  // Daily streak state
+  const [dailyStreak, setDailyStreak] = useState(0);
+  const [lastStudyDate, setLastStudyDate] = useState(null);
+  const [todayCompleted, setTodayCompleted] = useState(false); // did they finish a full deck today?
+  const [sectionsCompletedToday, setSectionsCompletedToday] = useState(new Set());
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [showStreakPopup, setShowStreakPopup] = useState(false);
+
+  // Study mode options
+  const [shuffled, setShuffled] = useState(false);
+  const [unmasteredOnly, setUnmasteredOnly] = useState(false);
+  const [cardOrder, setCardOrder] = useState([]);
+  const studyStateRef = useRef({});
+
+  // Load streak data from persistent storage on mount
+  useEffect(() => {
+    const loadStreak = () => {
+      try {
+        const result = localStorage.getItem("streak-data");
+        if (result) {
+          const data = JSON.parse(result);
+          const today = getToday();
+          const yesterday = getYesterday();
+
+          if (data.lastStudyDate === today) {
+            // Already studied today — keep streak, mark today done
+            setDailyStreak(data.streak);
+            setLastStudyDate(data.lastStudyDate);
+            setTodayCompleted(true);
+            setSectionsCompletedToday(new Set(data.sectionsToday || []));
+          } else if (data.lastStudyDate === yesterday) {
+            // Studied yesterday — streak alive but not yet earned today
+            setDailyStreak(data.streak);
+            setLastStudyDate(data.lastStudyDate);
+            setTodayCompleted(false);
+            setSectionsCompletedToday(new Set());
+          } else {
+            // Missed a day — streak resets
+            setDailyStreak(0);
+            setLastStudyDate(null);
+            setTodayCompleted(false);
+            setSectionsCompletedToday(new Set());
+          }
+        }
+      } catch (e) {
+        // No stored data yet, start fresh
+      }
+    };
+    loadStreak();
+  }, []);
+
+  // Save streak data to persistent storage whenever it changes
+  const saveStreak = useCallback((streak, lastDate, sectionsToday) => {
+    try {
+      localStorage.setItem("streak-data", JSON.stringify({
+        streak,
+        lastStudyDate: lastDate,
+        sectionsToday: [...sectionsToday],
+      }));
+    } catch (e) {
+      // Storage might not be available
+    }
+  }, []);
+
+  const buildCardOrder = useCallback((sectionId, cards, doShuffle, doUnmastered, currentMastered) => {
+    let indices = cards.map((_, i) => i);
+    if (doUnmastered) {
+      const remaining = indices.filter(i => !currentMastered[`${sectionId}-${i}`]);
+      indices = remaining.length > 0 ? remaining : indices; // fallback to all if all mastered
+    }
+    if (doShuffle) {
+      for (let i = indices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+      }
+    }
+    return indices;
+  }, []);
+
+  // Also persist mastered cards and progress
+  useEffect(() => {
+    const loadProgress = () => {
+      try {
+        const result = localStorage.getItem("mastered-cards");
+        if (result) setMastered(JSON.parse(result));
+        const progResult = localStorage.getItem("card-progress");
+        if (progResult) setProgress(JSON.parse(progResult));
+      } catch (e) {}
+    };
+    loadProgress();
+  }, []);
+
+  useEffect(() => {
+    if (Object.keys(mastered).length > 0) {
+      try { localStorage.setItem("mastered-cards", JSON.stringify(mastered)); } catch(e) {}
+    }
+  }, [mastered]);
+
+  useEffect(() => {
+    if (Object.keys(progress).length > 0) {
+      try { localStorage.setItem("card-progress", JSON.stringify(progress)); } catch(e) {}
+    }
+  }, [progress]);
+
+  // Load data on mount
+  useEffect(() => {
+    // We'll build card data from the sections metadata
+    // Since we can't embed 200KB of data, we'll generate representative flashcards
+    const generateCards = () => {
+      // This is populated from the actual PDF content
+      const cards = {
+        "fundamentals": [
+          {t:"CIA Triad",c:"Confidentiality: Sensitive info accessed only by authorized persons.\nIntegrity: Assuring accuracy and reliability of info/systems.\nAvailability: Data and resources available to authorized users when needed."},
+          {t:"Confidentiality",c:"Measures to ensure sensitive info is not disclosed to unauthorized entities.\n• Access Controls (passwords, biometrics)\n• Encryption\n• Secure Communication (SSL/TLS)\n• Data Classification"},
+          {t:"Integrity",c:"Protecting data from unauthorized changes to ensure reliability.\n• Checksums & Hash Functions\n• Digital Signatures\n• Access Controls\n• Version Control"},
+          {t:"Availability",c:"Ensuring data/systems accessible when needed.\n• Redundancy\n• Fault Tolerance\n• Backup Systems\n• Disaster Recovery Plans\n• Prevents DDoS impact"},
+          {t:"DAD Triad",c:"Opposite of CIA Triad:\n• Disclosure — breach of confidentiality\n• Alteration — loss of integrity\n• Destruction — attack on availability"},
+          {t:"Non-repudiation",c:"Ensures a party cannot deny the authenticity of their signature or message.\nImplemented using digital signatures with cryptographic techniques."},
+          {t:"AAA Framework",c:"Authentication: Verifying identity of user/device.\nAuthorization: Determining what user is permitted to do.\nAccounting (Auditing): Tracking user activities and resource usage."},
+          {t:"Authentication Factors",c:"Something you know: password, PIN\nSomething you have: token, smart card\nSomething you are: biometrics\nSomewhere you are: geolocation\nSomething you do: behavioral biometrics"},
+          {t:"MFA",c:"Multi-Factor Authentication requires 2+ independent credential categories.\nCombines: knowledge + possession + inherence.\nStronger than any single factor alone."},
+          {t:"Authorization",c:"Determines what authenticated users can do.\n• Permissions & Privileges (read, write, execute)\n• Access Control Lists (ACLs)\n• Models: MAC, DAC, RBAC"},
+          {t:"Accounting",c:"Tracking user activities and resource usage.\n• User Activity Tracking\n• Audit Trails and Logs\n• Session monitoring\n• Ensures accountability"},
+          {t:"Gap Analysis",c:"Comparing current security posture with standards/requirements.\n1. Identify Current State\n2. Determine Target State\n3. Analyze the Gap\n4. Plan remediation"},
+          {t:"Zero Trust",c:"Never automatically trust anything inside or outside perimeter.\n• Strict Identity Verification\n• Least Privilege Access\n• MFA everywhere\n• Monitor and Log All Traffic"},
+          {t:"Zero Trust Architecture",c:"Data Plane: Policy Enforcement Point, Implicit Trust Zones\nControl Plane: Adaptive Identity, Policy-driven Access Control, Policy Engine, Policy Administrator\nThreat Scope Reduction"},
+          {t:"Security Controls Categories",c:"Technical (logical): firewalls, IDS/IPS, encryption\nManagerial (administrative): policies, risk management\nOperational: day-to-day procedures, training\nPhysical: lighting, fences, cameras, guards"},
+          {t:"Security Controls Types",c:"Preventive: stop incidents (IPS, firewalls)\nDetective: detect incidents (IDS, SIEM)\nCorrective: remediate (backups, IR)\nDeterrent: discourage (cameras, guards)\nDirective: policies, procedures\nCompensating: alternate controls"},
+        ],
+        "threats": [
+          {t:"Threat Actors",c:"Nation-state: government-sponsored, APTs\nOrganized Crime: financial motivation\nHacktivists: political/social agenda\nInsider Threats: employees with access\nScript Kiddies: low skill, use existing tools"},
+          {t:"Attack Vectors",c:"Methods attackers use to gain access:\n• Phishing/social engineering\n• Unpatched vulnerabilities\n• Misconfigured systems\n• Supply chain compromise\n• Removable media"},
+          {t:"Indicators of Compromise (IoC)",c:"Evidence that a system has been breached:\n• Unusual outbound traffic\n• Anomalous privileged user activity\n• Geographic login irregularities\n• Unexpected software/processes\n• Log anomalies"},
+          {t:"Malware Types",c:"Virus: self-replicating, attaches to files\nWorm: self-propagating across networks\nTrojan: disguised as legitimate software\nSpyware: monitors user activity\nAdware: displays unwanted ads\nRootkit: hides in OS kernel"},
+          {t:"Advanced Persistent Threat (APT)",c:"Sophisticated, long-term targeted attack.\n• Usually nation-state sponsored\n• Maintains presence for months/years\n• Goals: espionage, data theft\n• Uses multiple attack vectors"},
+          {t:"Supply Chain Attack",c:"Compromising a trusted vendor/supplier to infiltrate target.\n• Software supply chain (SolarWinds)\n• Hardware tampering\n• Third-party service compromise\n• Difficult to detect"},
+          {t:"Denial of Service (DoS/DDoS)",c:"Overwhelming a system to make it unavailable.\nDoS: single source\nDDoS: distributed, multiple sources (botnets)\nTypes: volumetric, protocol, application layer"},
+          {t:"Insider Threat",c:"Threat from people within the organization.\n• Malicious: intentional harm\n• Negligent: careless mistakes\n• Compromised: credentials stolen\nMitigate: least privilege, monitoring, training"},
+          {t:"Brute Force Attack",c:"Systematically trying all possible passwords/keys.\n• Dictionary attack: common words\n• Rainbow table: pre-computed hashes\n• Credential stuffing: stolen creds\nMitigate: lockout policies, MFA, complexity"},
+          {t:"Password Attacks",c:"• Brute Force: try all combinations\n• Dictionary: common words list\n• Rainbow Table: pre-computed hashes\n• Password Spraying: common passwords across many accounts\n• Credential Stuffing: reused stolen credentials"},
+        ],
+        "vulnerabilities": [
+          {t:"Vulnerability Types",c:"Software: coding flaws, buffer overflows\nConfiguration: default settings, open ports\nHardware: firmware flaws, physical access\nHuman: social engineering susceptibility\nZero-day: unknown to vendor"},
+          {t:"Common Vulnerabilities",c:"• SQL Injection\n• Cross-Site Scripting (XSS)\n• Buffer Overflow\n• Race Condition\n• Improper Input Validation\n• Default Credentials"},
+          {t:"SQL Injection",c:"Inserting malicious SQL into input fields to manipulate databases.\n• Can read, modify, delete data\n• Bypass authentication\nMitigate: parameterized queries, input validation, WAF"},
+          {t:"Cross-Site Scripting (XSS)",c:"Injecting malicious scripts into web pages viewed by others.\nStored XSS: persisted on server\nReflected XSS: in URL/request\nDOM-based: client-side manipulation\nMitigate: input sanitization, CSP"},
+          {t:"Buffer Overflow",c:"Writing data beyond allocated memory buffer.\n• Can execute arbitrary code\n• Crash applications\nMitigate: input validation, ASLR, DEP, secure coding"},
+          {t:"OWASP Top 10",c:"Top web application security risks:\n1. Broken Access Control\n2. Cryptographic Failures\n3. Injection\n4. Insecure Design\n5. Security Misconfiguration\n6. Vulnerable Components\n7. Auth Failures\n8. Data Integrity Failures\n9. Logging Failures\n10. SSRF"},
+          {t:"Race Condition",c:"When system behavior depends on timing of uncontrolled events.\n• TOCTOU (Time of Check/Time of Use)\n• Can bypass security checks\nMitigate: locks, mutexes, proper synchronization"},
+          {t:"Privilege Escalation",c:"Gaining higher access than authorized.\nVertical: user → admin\nHorizontal: user A → user B\nMitigate: least privilege, patching, monitoring"},
+          {t:"Directory Traversal",c:"Accessing files outside intended directory using ../ sequences.\n• Can read sensitive system files\n• /etc/passwd exposure\nMitigate: input validation, chroot, WAF"},
+          {t:"CSRF (Cross-Site Request Forgery)",c:"Tricking authenticated user into submitting malicious request.\n• Leverages existing session\n• User unknowingly performs actions\nMitigate: anti-CSRF tokens, SameSite cookies"},
+        ],
+        "ransomware": [
+          {t:"Ransomware",c:"Malware that encrypts victim's files and demands payment.\n• Crypto ransomware: encrypts files\n• Locker ransomware: locks system\n• Double extortion: encrypt + threaten to leak\n• Spreads via phishing, RDP, vulnerabilities"},
+          {t:"Ransomware Prevention",c:"• Regular backups (3-2-1 rule)\n• Patch management\n• Email filtering\n• User awareness training\n• Network segmentation\n• Endpoint detection (EDR)"},
+          {t:"Trojans",c:"Malware disguised as legitimate software.\n• Remote Access Trojan (RAT)\n• Banking Trojan\n• Downloader Trojan\n• Users unknowingly install\nMitigate: antivirus, user training, app whitelisting"},
+          {t:"Rootkits",c:"Malware that hides deep in OS to maintain persistent access.\n• Kernel-level rootkits\n• Boot-level rootkits\n• Extremely difficult to detect\nMitigate: secure boot, integrity monitoring, reinstall OS"},
+          {t:"Keyloggers",c:"Record keystrokes to capture passwords/sensitive data.\n• Software or hardware based\n• Can capture credentials, credit cards\nMitigate: antimalware, virtual keyboards, MFA"},
+          {t:"Fileless Malware",c:"Operates entirely in memory without writing to disk.\n• Uses legitimate tools (PowerShell, WMI)\n• Evades traditional antivirus\n• Living-off-the-land techniques\nMitigate: behavior-based detection, EDR"},
+          {t:"Spyware & Adware",c:"Spyware: secretly monitors user activity, collects data\nAdware: displays unwanted advertisements\nBoth can slow systems and compromise privacy.\nMitigate: antimalware, careful downloads"},
+          {t:"Logic Bomb",c:"Malicious code triggered by specific condition (date, event).\n• Often planted by insiders\n• Dormant until triggered\nMitigate: code review, access controls, monitoring"},
+          {t:"Worms",c:"Self-replicating malware that spreads without user interaction.\n• Exploits network vulnerabilities\n• Can consume bandwidth, crash systems\n• WannaCry, Conficker examples\nMitigate: patching, network segmentation, IDS"},
+        ],
+        "onpath": [
+          {t:"On-Path Attack (MITM)",c:"Attacker intercepts communication between two parties.\n• Can eavesdrop, modify, inject data\n• SSL stripping\n• ARP spoofing\nMitigate: encryption, certificate pinning, HSTS"},
+          {t:"ARP Spoofing",c:"Sending fake ARP messages to link attacker's MAC to legitimate IP.\n• Enables on-path attacks on LAN\n• Can intercept, modify traffic\nMitigate: static ARP entries, DAI, network monitoring"},
+          {t:"DNS Poisoning",c:"Corrupting DNS cache to redirect traffic to malicious sites.\n• Pharming attack\n• Can affect entire networks\nMitigate: DNSSEC, secure DNS servers, cache clearing"},
+          {t:"Replay Attack",c:"Capturing and retransmitting valid data to gain unauthorized access.\n• Session token replay\n• Authentication replay\nMitigate: timestamps, nonces, session expiration"},
+          {t:"SSL Stripping",c:"Downgrading HTTPS to HTTP to intercept traffic.\n• User thinks connection is secure\n• Attacker sees plaintext\nMitigate: HSTS, certificate pinning, user awareness"},
+          {t:"Session Hijacking",c:"Taking over an active session by stealing session token.\n• Cookie theft\n• Session fixation\n• Sidejacking\nMitigate: secure cookies, session timeout, encryption"},
+        ],
+        "encryption": [
+          {t:"Symmetric Encryption",c:"Same key for encryption and decryption.\n• Fast, efficient for large data\n• Key distribution challenge\n• AES, DES, 3DES, Blowfish, RC4"},
+          {t:"Asymmetric Encryption",c:"Public key encrypts, private key decrypts (or vice versa).\n• Solves key distribution problem\n• Slower than symmetric\n• RSA, ECC, Diffie-Hellman, DSA"},
+          {t:"AES",c:"Advanced Encryption Standard.\n• Symmetric block cipher\n• Key sizes: 128, 192, 256 bits\n• Block size: 128 bits\n• Current gold standard for encryption"},
+          {t:"RSA",c:"Rivest-Shamir-Adleman asymmetric algorithm.\n• Based on factoring large primes\n• Used for encryption & digital signatures\n• Key sizes: 2048+ bits recommended\n• Slower than symmetric methods"},
+          {t:"Hashing",c:"One-way function producing fixed-size output from any input.\n• Cannot be reversed\n• Used for integrity verification\n• MD5 (broken), SHA-1 (deprecated), SHA-256, SHA-3"},
+          {t:"Digital Signatures",c:"Uses asymmetric crypto to verify authenticity & integrity.\n• Sign with private key\n• Verify with public key\n• Provides non-repudiation\n• Used in certificates, code signing"},
+          {t:"PKI (Public Key Infrastructure)",c:"Framework for managing digital certificates and keys.\n• Certificate Authority (CA)\n• Registration Authority (RA)\n• Certificate Revocation List (CRL)\n• OCSP for real-time validation"},
+          {t:"Certificate Types",c:"DV: Domain Validation (basic)\nOV: Organization Validation\nEV: Extended Validation (highest trust)\nWildcard: covers subdomains (*.domain.com)\nSAN: Subject Alternative Name (multiple domains)"},
+          {t:"Key Exchange",c:"Diffie-Hellman: creates shared secret over insecure channel\nECDHE: elliptic curve variant, forward secrecy\nRSA key exchange: encrypts session key\nPerfect Forward Secrecy: new keys per session"},
+          {t:"Blockchain",c:"Distributed, immutable ledger using cryptographic hashing.\n• Each block links to previous via hash\n• Decentralized consensus\n• Tamper-evident\n• Used in cryptocurrency, supply chain"},
+          {t:"Steganography",c:"Hiding data within other data (images, audio, video).\n• Data hidden in plain sight\n• Different from encryption (concealment vs scrambling)\n• Can combine with encryption for added security"},
+          {t:"Tokenization",c:"Replacing sensitive data with non-sensitive placeholder tokens.\n• Original data stored securely in token vault\n• Used for credit card numbers, PII\n• Reduces scope of compliance (PCI DSS)"},
+        ],
+        "socialeng": [
+          {t:"Social Engineering",c:"Manipulating people to divulge information or perform actions.\n• Exploits human psychology\n• Often first step in larger attacks\n• Most effective attack vector"},
+          {t:"Phishing",c:"Fraudulent emails/messages to steal credentials or install malware.\n• Spear phishing: targeted individual\n• Whaling: targeting executives\n• Vishing: voice phishing\n• Smishing: SMS phishing"},
+          {t:"Pretexting",c:"Creating fabricated scenario to engage victim.\n• Impersonating authority figure\n• Building trust over time\n• Often combined with other techniques"},
+          {t:"Baiting",c:"Offering something enticing to lure victim.\n• Infected USB drives left in parking lots\n• Free download offers\n• Curiosity exploitation"},
+          {t:"Tailgating / Piggybacking",c:"Following authorized person through secure entry.\nTailgating: without their knowledge\nPiggybacking: with their consent\nMitigate: mantraps, security awareness, badge policies"},
+          {t:"Watering Hole Attack",c:"Compromising websites frequently visited by target group.\n• Infects legitimate sites\n• Targets specific organizations/industries\n• Difficult to detect"},
+          {t:"Typosquatting",c:"Registering misspelled domains to catch user typos.\n• gooogle.com instead of google.com\n• Can serve phishing pages or malware\n• Also called URL hijacking"},
+          {t:"Shoulder Surfing",c:"Observing someone's screen or keyboard to steal info.\n• Can be done in person or with cameras\nMitigate: privacy screens, awareness, positioning"},
+          {t:"Dumpster Diving",c:"Searching through trash for sensitive information.\n• Discarded documents, drives, media\nMitigate: shredding, secure disposal, clean desk policy"},
+          {t:"Influence Campaigns",c:"Coordinated efforts to manipulate public opinion.\n• Disinformation: intentionally false\n• Misinformation: unintentionally false\n• Hybrid warfare component"},
+        ],
+        "securing": [
+          {t:"Hardening",c:"Reducing attack surface by removing unnecessary services.\n• Disable unused ports/services\n• Remove default accounts\n• Apply security baselines\n• CIS Benchmarks, DISA STIGs"},
+          {t:"Patch Management",c:"Systematic process of applying updates.\n• Test before deploying\n• Prioritize critical/security patches\n• Regular schedule\n• Emergency patches for zero-days"},
+          {t:"Network Segmentation",c:"Dividing network into isolated segments.\n• Limits lateral movement\n• Contains breaches\n• VLANs, subnets, firewalls\n• Microsegmentation for granular control"},
+          {t:"Endpoint Protection",c:"Securing individual devices.\n• Antivirus/Antimalware\n• EDR (Endpoint Detection & Response)\n• Host-based firewall\n• Full disk encryption\n• Application whitelisting"},
+          {t:"Wireless Security",c:"WPA3: current standard\nWPA2: still common, AES-CCMP\nWEP: deprecated, easily cracked\n• Use enterprise mode (802.1X)\n• Disable WPS\n• MAC filtering (limited value)"},
+          {t:"VPN",c:"Virtual Private Network creates encrypted tunnel.\n• Site-to-site: connects networks\n• Remote access: individual users\n• IPSec or SSL/TLS based\n• Split vs full tunnel"},
+          {t:"IDS vs IPS",c:"IDS: Intrusion Detection System — monitors and alerts\nIPS: Intrusion Prevention System — monitors and blocks\n• Signature-based: known patterns\n• Anomaly-based: deviation from baseline\n• Network (NIDS/NIPS) or Host (HIDS/HIPS)"},
+          {t:"Firewalls",c:"Filter traffic based on rules.\n• Stateless: individual packets\n• Stateful: tracks connections\n• Next-Gen (NGFW): app awareness, IPS, DPI\n• WAF: protects web applications\n• Rules: allow/deny based on IP, port, protocol"},
+          {t:"DMZ (Demilitarized Zone)",c:"Network segment between internal and external networks.\n• Hosts public-facing services\n• Adds layer of security\n• Protected by firewalls on both sides"},
+          {t:"NAC (Network Access Control)",c:"Controls which devices can access the network.\n• Pre-admission: check before access\n• Post-admission: monitor after access\n• Agent-based or agentless\n• 802.1X integration"},
+        ],
+        "architecture": [
+          {t:"Cloud Service Models",c:"IaaS: Infrastructure (VMs, storage, networking)\nPaaS: Platform (development environment)\nSaaS: Software (applications)\nResponsibility varies by model — shared responsibility model"},
+          {t:"Cloud Deployment Models",c:"Public: shared infrastructure (AWS, Azure)\nPrivate: dedicated to one organization\nHybrid: combination of public + private\nCommunity: shared by related organizations"},
+          {t:"Containerization",c:"Lightweight virtualization using shared OS kernel.\n• Docker, Kubernetes\n• Faster than VMs\n• Isolated but share kernel\n• Container security: image scanning, runtime protection"},
+          {t:"Serverless",c:"Cloud provider manages infrastructure entirely.\n• Function as a Service (FaaS)\n• Pay per execution\n• Auto-scaling\n• Security: provider manages OS/runtime"},
+          {t:"IoT Security",c:"Internet of Things challenges:\n• Default credentials\n• Limited processing for security\n• Unpatched firmware\n• Large attack surface\nMitigate: network segmentation, firmware updates, strong auth"},
+          {t:"Virtualization",c:"Running multiple OS on single hardware.\n• Type 1 (bare metal): ESXi, Hyper-V\n• Type 2 (hosted): VirtualBox, VMware Workstation\n• VM escape: breaking out of VM\n• VM sprawl: uncontrolled proliferation"},
+          {t:"Infrastructure as Code (IaC)",c:"Managing infrastructure through code/templates.\n• Terraform, CloudFormation, ARM\n• Version controlled\n• Consistent deployments\n• Security: scan templates for misconfigs"},
+          {t:"Microservices",c:"Architecture splitting apps into small, independent services.\n• Each service has specific function\n• API communication\n• Easier to scale and update\n• Security: API gateway, service mesh"},
+          {t:"Data Protection",c:"Data states:\n• At rest: encryption (AES, BitLocker)\n• In transit: TLS/SSL, VPN\n• In use: memory encryption\n• Data Loss Prevention (DLP) monitors all states"},
+          {t:"Data Classification",c:"Public: no restrictions\nInternal: limited distribution\nConfidential: sensitive business data\nRestricted/Top Secret: highest sensitivity\nDetermines handling, storage, and access requirements"},
+        ],
+        "techniques": [
+          {t:"Defense in Depth",c:"Multiple layers of security controls.\n• Physical → Network → Host → Application → Data\n• No single point of failure\n• If one layer fails, others protect"},
+          {t:"Least Privilege",c:"Users get minimum access needed for their role.\n• Reduces attack surface\n• Limits damage from compromise\n• Regular access reviews\n• Just-in-time access"},
+          {t:"Separation of Duties",c:"No single person controls an entire critical process.\n• Prevents fraud and errors\n• Requires collusion to bypass\n• Common in financial controls"},
+          {t:"Change Management",c:"Formal process for making system changes.\n• Request → Review → Approve → Test → Implement → Document\n• Reduces unauthorized changes\n• CAB (Change Advisory Board)"},
+          {t:"Incident Response Plan",c:"Documented procedures for handling security incidents.\n• Preparation\n• Identification\n• Containment\n• Eradication\n• Recovery\n• Lessons Learned"},
+          {t:"Business Continuity",c:"Maintaining operations during/after disruption.\n• BIA: Business Impact Analysis\n• RPO: Recovery Point Objective\n• RTO: Recovery Time Objective\n• BCP testing and updates"},
+          {t:"Honeypots & Honeynets",c:"Decoy systems to attract and study attackers.\nHoneypot: single decoy system\nHoneynet: network of honeypots\nHoneyfile/Honeytoken: fake data to detect access\nPurpose: early detection, threat intelligence"},
+          {t:"SCAP",c:"Security Content Automation Protocol.\n• Standardized approach to security management\n• CVE: Common Vulnerabilities and Exposures\n• CVSS: Vulnerability scoring\n• CCE: Configuration enumeration"},
+          {t:"Secure Coding Practices",c:"• Input validation\n• Output encoding\n• Parameterized queries\n• Error handling without info disclosure\n• Code review\n• Static/Dynamic analysis (SAST/DAST)"},
+          {t:"Data Loss Prevention (DLP)",c:"Monitoring and protecting data from unauthorized transfer.\n• Network DLP: monitors traffic\n• Endpoint DLP: monitors devices\n• Cloud DLP: monitors cloud services\n• Content inspection, context analysis"},
+        ],
+        "vulnmgmt": [
+          {t:"Vulnerability Scanning",c:"Automated tools to find known vulnerabilities.\n• Nessus, Qualys, OpenVAS\n• Credentialed vs non-credentialed scans\n• Network, web app, database scans\n• Regular scheduling required"},
+          {t:"Penetration Testing",c:"Simulated attack to find exploitable vulnerabilities.\n• Black box: no prior knowledge\n• White box: full knowledge\n• Gray box: partial knowledge\n• Rules of engagement required"},
+          {t:"NIST Pen Test Methodology",c:"4 stages:\n1. Planning: scope, rules of engagement\n2. Discovery: reconnaissance, scanning\n3. Attack: exploitation, pivoting\n4. Reporting: findings, recommendations"},
+          {t:"Vulnerability Assessment vs Pen Test",c:"Assessment: identifies vulnerabilities, no exploitation\nPen Test: identifies AND exploits vulnerabilities\nAssessment: broader scope, less risky\nPen Test: deeper, proves real impact"},
+          {t:"CVSS Scoring",c:"Common Vulnerability Scoring System (0-10).\nNone: 0.0\nLow: 0.1-3.9\nMedium: 4.0-6.9\nHigh: 7.0-8.9\nCritical: 9.0-10.0\nFactors: attack vector, complexity, impact"},
+          {t:"Patch Management Process",c:"1. Identify applicable patches\n2. Assess risk and priority\n3. Test in lab environment\n4. Deploy to production\n5. Verify and document\n6. Rollback plan if needed"},
+          {t:"Bug Bounty Programs",c:"Rewards researchers for finding vulnerabilities.\n• Responsible disclosure\n• Defined scope and rules\n• HackerOne, Bugcrowd platforms\n• Cost-effective security testing"},
+          {t:"Threat Intelligence",c:"Evidence-based knowledge about threats.\n• OSINT: Open Source Intelligence\n• Threat feeds and indicators\n• STIX/TAXII: sharing formats\n• Dark web monitoring"},
+        ],
+        "monitoring": [
+          {t:"SIEM",c:"Security Information and Event Management.\n• Collects and correlates logs from multiple sources\n• Real-time alerting\n• Dashboards and reporting\n• Splunk, QRadar, Wazuh, Sentinel"},
+          {t:"Log Management",c:"Collecting, storing, and analyzing log data.\n• Syslog protocol\n• Windows Event Logs\n• Application logs\n• Centralized logging\n• Retention policies"},
+          {t:"SOAR",c:"Security Orchestration, Automation, and Response.\n• Automates repetitive SOC tasks\n• Playbooks for incident response\n• Integrates with SIEM and other tools\n• Reduces response time"},
+          {t:"IDS/IPS Detection Methods",c:"Signature-based: matches known patterns\nAnomaly-based: detects deviations from baseline\nBehavior-based: watches for suspicious behavior\nHeuristic: uses algorithms and rules"},
+          {t:"Network Monitoring",c:"• Packet capture (pcap)\n• NetFlow/sFlow analysis\n• SNMP monitoring\n• Bandwidth monitoring\n• Wireshark, tcpdump\n• Baseline comparison"},
+          {t:"Alerting Best Practices",c:"• Tune to reduce false positives\n• Prioritize by severity\n• Escalation procedures\n• Alert fatigue prevention\n• Regular rule review\n• Correlation rules"},
+          {t:"Threat Hunting",c:"Proactively searching for threats not caught by automated tools.\n• Hypothesis-driven\n• Uses IoCs and TTPs\n• MITRE ATT&CK framework\n• Requires skilled analysts"},
+          {t:"File Integrity Monitoring",c:"Detecting changes to critical system files.\n• Tripwire, OSSEC\n• Baseline comparison\n• Alerts on unauthorized changes\n• Compliance requirement (PCI DSS)"},
+        ],
+        "email": [
+          {t:"Email Security Protocols",c:"SPF: Sender Policy Framework — authorized senders\nDKIM: DomainKeys — digital signature on emails\nDMARC: combines SPF + DKIM, sets policy\nPrevents email spoofing and phishing"},
+          {t:"Email Gateway Security",c:"Filters email before reaching users.\n• Spam filtering\n• Malware scanning\n• URL rewriting/sandboxing\n• Attachment filtering\n• Data Loss Prevention"},
+          {t:"S/MIME",c:"Secure/Multipurpose Internet Mail Extensions.\n• Email encryption and digital signatures\n• Uses PKI certificates\n• End-to-end encryption\n• Provides confidentiality, integrity, authentication"},
+          {t:"Endpoint Detection & Response",c:"EDR monitors endpoints for threats.\n• Continuous monitoring\n• Behavioral analysis\n• Automated response\n• Forensic data collection\n• CrowdStrike, Carbon Black, SentinelOne"},
+          {t:"Antivirus/Antimalware",c:"Signature-based: known malware patterns\nHeuristic: suspicious behavior patterns\nSandboxing: running in isolated environment\nCloud-based: real-time threat intelligence\nRegular updates essential"},
+        ],
+        "iam": [
+          {t:"IAM Concepts",c:"Identity: who you are\nAuthentication: proving identity\nAuthorization: what you can access\nAccounting: tracking actions\nProvisioning & deprovisioning lifecycle"},
+          {t:"SSO (Single Sign-On)",c:"One authentication grants access to multiple systems.\n• Reduces password fatigue\n• Centralized access management\n• Risk: single point of failure\n• SAML, OAuth, OIDC protocols"},
+          {t:"SAML",c:"Security Assertion Markup Language.\n• XML-based authentication standard\n• Identity Provider (IdP) authenticates\n• Service Provider (SP) grants access\n• Enterprise SSO standard"},
+          {t:"OAuth & OIDC",c:"OAuth 2.0: authorization framework (access tokens)\nOpenID Connect: authentication layer on OAuth\n• Used for web/mobile app login\n• 'Login with Google/Facebook'\n• Tokens instead of passwords"},
+          {t:"LDAP",c:"Lightweight Directory Access Protocol.\n• Queries directory services\n• Active Directory uses LDAP\n• Centralized user management\n• LDAPS for encrypted connection"},
+          {t:"RADIUS & TACACS+",c:"RADIUS: Remote Authentication Dial-In User Service\n• Combines auth + accounting\n• UDP-based\nTACACS+: Terminal Access Controller\n• Separates auth, authz, accounting\n• TCP-based, fully encrypted\n• Cisco proprietary"},
+          {t:"Access Control Models",c:"DAC: Discretionary — owner controls access\nMAC: Mandatory — labels/clearances\nRBAC: Role-Based — access by job role\nABAC: Attribute-Based — policies using attributes\nRule-Based: predefined rules"},
+          {t:"Privileged Access Management",c:"Controlling elevated access accounts.\n• Just-in-time access\n• Password vaulting\n• Session recording\n• Privileged account monitoring\n• CyberArk, BeyondTrust"},
+          {t:"Federation",c:"Linking identity systems across organizations.\n• Trust relationships\n• Users authenticated by home organization\n• Cross-domain SSO\n• SAML, WS-Federation"},
+          {t:"MFA Methods",c:"• Push notification (Duo, Authenticator)\n• TOTP: Time-based One-Time Password\n• HOTP: HMAC-based OTP\n• Hardware tokens (YubiKey)\n• SMS (less secure)\n• Biometrics"},
+        ],
+        "automation": [
+          {t:"Automation in Security",c:"Automating repetitive security tasks.\n• Faster response times\n• Reduced human error\n• Consistent execution\n• Scalable operations\n• Scripts, playbooks, workflows"},
+          {t:"SOAR Platforms",c:"Security Orchestration, Automation, and Response.\n• Automate incident response\n• Playbooks for common scenarios\n• Integrate multiple security tools\n• Metrics and reporting\n• Splunk SOAR, Palo Alto XSOAR"},
+          {t:"Infrastructure as Code",c:"Managing infrastructure through code.\n• Terraform, Ansible, Puppet, Chef\n• Version controlled\n• Repeatable deployments\n• Security scanning of templates\n• Drift detection"},
+          {t:"CI/CD Pipeline Security",c:"Continuous Integration/Continuous Deployment.\n• SAST: Static Application Security Testing\n• DAST: Dynamic testing\n• SCA: Software Composition Analysis\n• Container scanning\n• Secrets management"},
+          {t:"Scripting for Security",c:"• Python: automation, API integration\n• PowerShell: Windows administration\n• Bash: Linux automation\n• Use cases: log parsing, IoC enrichment, automated scans"},
+          {t:"API Security",c:"Protecting application programming interfaces.\n• Authentication (API keys, OAuth)\n• Rate limiting\n• Input validation\n• HTTPS/TLS\n• API gateway"},
+        ],
+        "incident": [
+          {t:"IR Process (NIST)",c:"1. Preparation: tools, team, plans\n2. Detection & Analysis: identify incident\n3. Containment: limit damage\n4. Eradication: remove threat\n5. Recovery: restore operations\n6. Post-Incident/Lessons Learned"},
+          {t:"Containment Strategies",c:"Short-term: isolate affected systems immediately\nLong-term: apply patches, change credentials\n• Network isolation\n• Disabling accounts\n• Blocking IPs/domains\n• Evidence preservation"},
+          {t:"Evidence Handling",c:"Chain of custody: documented transfer of evidence\n• Order of volatility: collect most volatile first\n• Memory → Cache → Disk → Logs → Network\n• Forensic imaging\n• Write blockers"},
+          {t:"Incident Classification",c:"• Severity levels (Critical, High, Medium, Low)\n• Types: malware, unauthorized access, DoS, data breach\n• Escalation procedures\n• Communication plans\n• Legal/regulatory notification"},
+          {t:"Digital Forensics",c:"• Acquisition: forensic imaging of evidence\n• Analysis: examining evidence\n• Reporting: documenting findings\n• Legal hold: preserving relevant data\n• Tools: FTK, EnCase, Autopsy"},
+          {t:"Post-Incident Activities",c:"• Lessons learned meetings\n• Update IR plan\n• Improve detection rules\n• Root cause analysis\n• Documentation for legal/compliance\n• Metrics and KPIs"},
+          {t:"CSIRT",c:"Computer Security Incident Response Team.\n• Coordinates incident response\n• Internal and/or external team\n• Defined roles and responsibilities\n• Regular training and exercises\n• Tabletop exercises"},
+          {t:"Order of Volatility",c:"Collect evidence from most to least volatile:\n1. CPU registers/cache\n2. RAM\n3. Swap/temp files\n4. Hard drive\n5. Remote logs\n6. Physical configuration\n7. Archival media"},
+        ],
+        "governance": [
+          {t:"Security Frameworks",c:"NIST CSF: Identify, Protect, Detect, Respond, Recover\nISO 27001: ISMS standard\nCIS Controls: prioritized security actions\nCOBIT: IT governance framework\nMITRE ATT&CK: adversary tactics and techniques"},
+          {t:"Risk Management",c:"Risk = Threat × Vulnerability × Impact\n• Risk Avoidance: eliminate the risk\n• Risk Mitigation: reduce the risk\n• Risk Transfer: insurance, contracts\n• Risk Acceptance: acknowledge and monitor"},
+          {t:"Risk Assessment",c:"Quantitative: numerical values (ALE = SLE × ARO)\nQualitative: subjective ratings (High/Medium/Low)\n• Asset valuation\n• Threat identification\n• Vulnerability assessment\n• Impact analysis"},
+          {t:"Compliance",c:"Meeting regulatory and legal requirements.\n• PCI DSS: payment card data\n• HIPAA: healthcare data\n• GDPR: EU personal data\n• SOX: financial reporting\n• FERPA: education records"},
+          {t:"Security Policies",c:"• AUP: Acceptable Use Policy\n• Password Policy\n• Data Classification Policy\n• Incident Response Policy\n• Remote Access Policy\n• BYOD Policy\n• Clean Desk Policy"},
+          {t:"Business Impact Analysis",c:"Identifies critical business functions and impact of disruption.\n• RTO: Recovery Time Objective\n• RPO: Recovery Point Objective\n• MTTR: Mean Time to Repair\n• MTBF: Mean Time Between Failures"},
+          {t:"Third-Party Risk",c:"Risks from vendors, suppliers, partners.\n• Vendor assessment questionnaires\n• SOC 2 reports\n• Right to audit clauses\n• Supply chain risk management\n• SLA requirements"},
+          {t:"Governance Concepts",c:"• Policies: high-level intent\n• Standards: mandatory requirements\n• Guidelines: recommended practices\n• Procedures: step-by-step instructions\n• Baselines: minimum security levels"},
+          {t:"Data Privacy",c:"• PII: Personally Identifiable Information\n• PHI: Protected Health Information\n• Data minimization\n• Purpose limitation\n• Right to be forgotten (GDPR)\n• Privacy impact assessments"},
+          {t:"Audit Types",c:"Internal: conducted by organization\nExternal: conducted by third party\nRegulatory: required by law\n• Compliance audits\n• Operational audits\n• Financial audits"},
+        ],
+        "physical": [
+          {t:"Physical Security Controls",c:"• Fences, gates, bollards\n• Security guards\n• CCTV cameras\n• Lighting\n• Mantraps/vestibules\n• Locks (biometric, cipher, electronic)"},
+          {t:"Access Control Vestibule",c:"Also called mantrap. Small room with two doors.\n• Only one door opens at a time\n• Prevents tailgating\n• Can include authentication\n• Common in data centers"},
+          {t:"Environmental Controls",c:"• HVAC: heating, ventilation, cooling\n• Fire suppression: wet pipe, dry pipe, gas\n• Humidity controls\n• UPS: Uninterruptible Power Supply\n• Generator backup\n• Hot/cold aisle containment"},
+          {t:"Fire Suppression",c:"Wet pipe: water always in pipes (most common)\nDry pipe: water held back until activated\nPre-action: combination of dry + detection\nGas-based: FM-200, CO2 (for electronics)\nClass C fires for electrical equipment"},
+          {t:"Surveillance",c:"• CCTV cameras (PTZ: pan-tilt-zoom)\n• Motion detection\n• Guards and patrols\n• Access logs\n• Visitor management\n• Drone surveillance"},
+          {t:"Secure Areas",c:"• Server rooms: restricted access\n• Data centers: multiple security layers\n• Faraday cages: block EM signals\n• SCIF: Sensitive Compartmented Info Facility\n• Air-gapped networks"},
+        ],
+        "resilience": [
+          {t:"High Availability",c:"Systems designed to minimize downtime.\n• 99.999% uptime (five nines) = ~5 min/year\n• Redundant components\n• Load balancing\n• Failover clustering\n• Geographic redundancy"},
+          {t:"Backup Types",c:"Full: complete copy of all data\nIncremental: only changes since last backup\nDifferential: changes since last full backup\nSnapshot: point-in-time copy\n3-2-1 Rule: 3 copies, 2 media types, 1 offsite"},
+          {t:"Disaster Recovery",c:"Restoring IT operations after major disruption.\n• Hot site: fully operational duplicate\n• Warm site: partially equipped\n• Cold site: empty facility\n• Cloud-based DR\n• Regular DR testing"},
+          {t:"Load Balancing",c:"Distributing traffic across multiple servers.\n• Round-robin\n• Least connections\n• Weighted distribution\n• Health checks\n• Increases availability and performance"},
+          {t:"RAID",c:"Redundant Array of Independent Disks.\nRAID 0: striping (performance, no redundancy)\nRAID 1: mirroring (redundancy)\nRAID 5: striping with parity (min 3 disks)\nRAID 6: double parity\nRAID 10: mirror + stripe"},
+          {t:"Recovery Metrics",c:"RTO: Recovery Time Objective — max acceptable downtime\nRPO: Recovery Point Objective — max data loss acceptable\nMTTR: Mean Time to Repair\nMTBF: Mean Time Between Failures"},
+          {t:"Redundancy Types",c:"• Server redundancy: clustering\n• Network redundancy: multiple paths\n• Power redundancy: UPS, generators\n• Data redundancy: replication, RAID\n• Geographic redundancy: multiple sites\n• N+1, 2N configurations"},
+        ],
+      };
+      return cards;
+    };
+    
+    setCardData(generateCards());
+    setLoading(false);
+  }, []);
+
+  // Progress tracking
+  const getProgress = useCallback((sectionId) => {
+    return progress[sectionId] || { studied: 0, mastered: 0 };
+  }, [progress]);
+
+  const markStudied = useCallback((sectionId, cardIndex) => {
+    setProgress(prev => {
+      const section = prev[sectionId] || { studied: 0, mastered: 0, cards: {} };
+      const cards = { ...section.cards, [cardIndex]: true };
+      return { ...prev, [sectionId]: { ...section, studied: Object.keys(cards).length, cards } };
+    });
+  }, []);
+
+  const markMastered = useCallback((sectionId, cardIndex) => {
+    const key = `${sectionId}-${cardIndex}`;
+    setMastered(prev => {
+      const updated = { ...prev, [key]: true };
+
+      // Check if entire section is now complete
+      const sectionCards = cardData?.[sectionId] || [];
+      const allMastered = sectionCards.every((_, idx) => updated[`${sectionId}-${idx}`]);
+
+      if (allMastered && !sectionsCompletedToday.has(sectionId)) {
+        const today = getToday();
+        const newSections = new Set(sectionsCompletedToday);
+        newSections.add(sectionId);
+        setSectionsCompletedToday(newSections);
+
+        if (!todayCompleted) {
+          // First deck completed today — increment streak!
+          const newStreak = (lastStudyDate === getYesterday() || lastStudyDate === today)
+            ? dailyStreak + 1
+            : 1;
+          setDailyStreak(newStreak);
+          setLastStudyDate(today);
+          setTodayCompleted(true);
+          setShowStreakPopup(true);
+          setTimeout(() => setShowStreakPopup(false), 3000);
+          saveStreak(newStreak, today, newSections);
+        } else {
+          // Already earned today's streak, just save sections
+          saveStreak(dailyStreak, today, newSections);
+        }
+
+        setShowCelebration(true);
+        setTimeout(() => setShowCelebration(false), 2500);
+      }
+
+      return updated;
+    });
+    markStudied(sectionId, cardIndex);
+  }, [markStudied, cardData, sectionsCompletedToday, todayCompleted, lastStudyDate, dailyStreak, saveStreak]);
+
+  const totalCards = cardData ? Object.values(cardData).reduce((sum, cards) => sum + cards.length, 0) : 0;
+  const totalMastered = Object.keys(mastered).length;
+
+  // Group sections by domain
+  const domains = {};
+  SECTIONS_META.forEach(s => {
+    if (!domains[s.domain]) domains[s.domain] = [];
+    domains[s.domain].push(s);
+  });
+
+  const filteredSections = searchQuery
+    ? SECTIONS_META.filter(s => 
+        s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.domain.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : selectedDomain
+    ? SECTIONS_META.filter(s => s.domain === selectedDomain)
+    : SECTIONS_META;
+
+  // Keep a ref in sync for the keyboard handler (avoids stale closure)
+  useEffect(() => {
+    studyStateRef.current = { flipped, currentCard, cardOrder, selectedSection, view };
+  }, [flipped, currentCard, cardOrder, selectedSection, view]);
+
+  // Keyboard shortcuts — Space: flip, G/Enter: got it, S: skip, ← →: navigate
+  useEffect(() => {
+    if (view !== "study") return;
+    const handler = (e) => {
+      const s = studyStateRef.current;
+      if (s.view !== "study" || !s.selectedSection) return;
+      const origIdx = s.cardOrder[s.currentCard] ?? s.currentCard;
+
+      if (e.code === "Space" || e.code === "ArrowUp") {
+        e.preventDefault();
+        if (!s.flipped) markStudied(s.selectedSection.id, origIdx);
+        setFlipped(f => !f);
+      } else if (e.code === "ArrowRight") {
+        if (s.currentCard < s.cardOrder.length - 1) {
+          setCurrentCard(c => c + 1);
+          setFlipped(false);
+        }
+      } else if (e.code === "ArrowLeft") {
+        if (s.currentCard > 0) {
+          setCurrentCard(c => c - 1);
+          setFlipped(false);
+        }
+      } else if ((e.code === "KeyG" || e.code === "Enter") && s.flipped) {
+        e.preventDefault();
+        markMastered(s.selectedSection.id, origIdx);
+        setFlipped(false);
+        if (s.currentCard < s.cardOrder.length - 1) setCurrentCard(c => c + 1);
+      } else if (e.code === "KeyS" && s.flipped) {
+        setFlipped(false);
+        if (s.currentCard < s.cardOrder.length - 1) setCurrentCard(c => c + 1);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [view, markStudied, markMastered]);
+
+  /* ──── Study View ──── */
+  if (view === "study" && selectedSection && cardData) {
+    const cards = cardData[selectedSection.id] || [];
+    const displayOrder = cardOrder.length > 0 ? cardOrder : cards.map((_, i) => i);
+    const originalIdx = displayOrder[currentCard] ?? currentCard;
+    const card = cards[originalIdx];
+    const sectionMeta = SECTIONS_META.find(s => s.id === selectedSection.id);
+    const isMastered = mastered[`${selectedSection.id}-${originalIdx}`];
+    const progressPct = displayOrder.length > 0 ? ((currentCard + 1) / displayOrder.length) * 100 : 0;
+
+    return (
+      <div style={{
+        minHeight: "100vh",
+        background: "#131F24",
+        fontFamily: "'Nunito', 'SF Pro Rounded', -apple-system, sans-serif",
+        color: "#fff",
+        maxWidth: 480,
+        margin: "0 auto",
+        position: "relative",
+        overflow: "hidden",
+      }}>
+        {/* Celebration overlay — deck complete */}
+        {showCelebration && (
+          <div style={{
+            position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
+            background: "rgba(0,0,0,0.7)", zIndex: 999, animation: "fadeIn 0.3s ease",
+          }}>
+            <div style={{
+              textAlign: "center", animation: "bounceIn 0.5s ease",
+              background: "#1C2F36", borderRadius: 24, padding: "32px 40px",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+            }}>
+              <div style={{ fontSize: 64, marginBottom: 12 }}>🎉</div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", marginBottom: 4 }}>
+                Deck Complete!
+              </div>
+              <div style={{ fontSize: 14, color: "#89A3AD", fontWeight: 700 }}>
+                You mastered every card in this section
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Daily streak popup */}
+        {showStreakPopup && (
+          <div style={{
+            position: "fixed", top: 20, left: "50%", transform: "translateX(-50%)",
+            zIndex: 1000, animation: "slideDown 0.4s ease",
+          }}>
+            <div style={{
+              background: "linear-gradient(135deg, #FFC800, #FF9600)", borderRadius: 16,
+              padding: "14px 28px", display: "flex", alignItems: "center", gap: 12,
+              boxShadow: "0 8px 30px rgba(255,200,0,0.3)",
+            }}>
+              <span style={{ fontSize: 32 }}>🔥</span>
+              <div>
+                <div style={{ fontSize: 20, fontWeight: 900, color: "#fff" }}>
+                  {dailyStreak} Day Streak!
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>
+                  {dailyStreak === 1 ? "You started a streak! Come back tomorrow!" : "Keep it going! Study again tomorrow!"}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Header */}
+        <div style={{
+          display: "flex", alignItems: "center", padding: "16px 20px",
+          borderBottom: "2px solid #1C2F36",
+        }}>
+          <button onClick={() => { setView("home"); setCurrentCard(0); setFlipped(false); }} style={{
+            background: "none", border: "none", color: "#89A3AD", fontSize: 28, cursor: "pointer", padding: 4,
+          }}>←</button>
+          <div style={{ flex: 1, margin: "0 16px" }}>
+            <div style={{
+              height: 16, background: "#1C2F36", borderRadius: 8, overflow: "hidden",
+            }}>
+              <div style={{
+                height: "100%", width: `${progressPct}%`, background: sectionMeta?.color || "#58CC02",
+                borderRadius: 8, transition: "width 0.5s ease",
+              }} />
+            </div>
+          </div>
+          <span style={{ color: "#89A3AD", fontSize: 14, fontWeight: 700 }}>
+            {currentCard + 1}/{displayOrder.length}
+          </span>
+        </div>
+
+        {/* Study mode toggles */}
+        <div style={{ display: "flex", gap: 8, padding: "6px 16px", justifyContent: "flex-end" }}>
+          <button
+            onClick={() => {
+              const next = !shuffled;
+              setShuffled(next);
+              const order = buildCardOrder(selectedSection.id, cards, next, unmasteredOnly, mastered);
+              setCardOrder(order);
+              setCurrentCard(0);
+              setFlipped(false);
+            }}
+            style={{
+              padding: "4px 10px", borderRadius: 10, fontSize: 11, fontWeight: 800,
+              border: `2px solid ${shuffled ? "#FFC800" : "#1C2F36"}`,
+              background: shuffled ? "rgba(255,200,0,0.15)" : "#1C2F36",
+              color: shuffled ? "#FFC800" : "#89A3AD", cursor: "pointer",
+            }}
+          >🔀 Shuffle</button>
+          <button
+            onClick={() => {
+              const next = !unmasteredOnly;
+              setUnmasteredOnly(next);
+              const order = buildCardOrder(selectedSection.id, cards, shuffled, next, mastered);
+              setCardOrder(order);
+              setCurrentCard(0);
+              setFlipped(false);
+            }}
+            style={{
+              padding: "4px 10px", borderRadius: 10, fontSize: 11, fontWeight: 800,
+              border: `2px solid ${unmasteredOnly ? "#1CB0F6" : "#1C2F36"}`,
+              background: unmasteredOnly ? "rgba(28,176,246,0.15)" : "#1C2F36",
+              color: unmasteredOnly ? "#1CB0F6" : "#89A3AD", cursor: "pointer",
+            }}
+          >⭐ Unmastered</button>
+        </div>
+
+        {/* Daily streak indicator */}
+        {dailyStreak > 0 && (
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+            padding: "8px 0", color: "#FFC800", fontWeight: 800, fontSize: 14,
+          }}>
+            🔥 {dailyStreak} day{dailyStreak !== 1 ? "s" : ""} {todayCompleted ? "✓" : "• Complete a deck today!"}
+          </div>
+        )}
+        {dailyStreak === 0 && (
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+            padding: "8px 0", color: "#89A3AD", fontWeight: 700, fontSize: 13,
+          }}>
+            Complete all cards in a deck to start your streak!
+          </div>
+        )}
+
+        {/* Card */}
+        <div style={{ padding: "20px 20px 100px" }}>
+          <div
+            onClick={() => { setFlipped(!flipped); if (!flipped) markStudied(selectedSection.id, originalIdx); }}
+            style={{
+              background: flipped ? "#1C2F36" : (sectionMeta?.color || "#58CC02"),
+              borderRadius: 20,
+              padding: 28,
+              minHeight: 380,
+              cursor: "pointer",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: flipped ? "flex-start" : "center",
+              alignItems: flipped ? "flex-start" : "center",
+              boxShadow: flipped
+                ? "0 4px 20px rgba(0,0,0,0.3)"
+                : `0 8px 0 ${sectionMeta?.color || "#58CC02"}88, 0 12px 30px rgba(0,0,0,0.3)`,
+              transform: flipped ? "none" : "translateY(-2px)",
+              transition: "all 0.3s ease",
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            {!flipped ? (
+              <>
+                <div style={{ fontSize: 48, marginBottom: 16 }}>{sectionMeta?.icon}</div>
+                <div style={{
+                  fontSize: 26, fontWeight: 800, textAlign: "center",
+                  color: "#fff", textShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                  lineHeight: 1.3,
+                }}>
+                  {card?.t}
+                </div>
+                <div style={{
+                  marginTop: 20, fontSize: 13, color: "rgba(255,255,255,0.7)",
+                  fontWeight: 700, textTransform: "uppercase", letterSpacing: 1,
+                }}>
+                  Tap to reveal
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{
+                  fontSize: 16, fontWeight: 800, color: sectionMeta?.color || "#58CC02",
+                  marginBottom: 12, textTransform: "uppercase", letterSpacing: 0.5,
+                }}>
+                  {card?.t}
+                </div>
+                <div style={{
+                  fontSize: 15, lineHeight: 1.7, color: "#CDE0E8",
+                  whiteSpace: "pre-line", fontWeight: 600,
+                }}>
+                  {card?.c}
+                </div>
+                {isMastered && (
+                  <div style={{
+                    position: "absolute", top: 16, right: 16,
+                    background: "#58CC02", borderRadius: 50,
+                    width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 16,
+                  }}>✓</div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Action buttons */}
+          {flipped && (
+            <div style={{
+              display: "flex", gap: 12, marginTop: 20,
+              animation: "slideUp 0.3s ease",
+            }}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFlipped(false);
+                  if (currentCard < displayOrder.length - 1) setCurrentCard(currentCard + 1);
+                }}
+                style={{
+                  flex: 1, padding: "16px 20px", borderRadius: 16,
+                  border: "2px solid #FF4B4B", background: "transparent",
+                  color: "#FF4B4B", fontSize: 16, fontWeight: 800,
+                  cursor: "pointer", textTransform: "uppercase",
+                }}
+              >
+                Study Again
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  markMastered(selectedSection.id, originalIdx);
+                  setFlipped(false);
+                  if (currentCard < displayOrder.length - 1) setCurrentCard(currentCard + 1);
+                }}
+                style={{
+                  flex: 1, padding: "16px 20px", borderRadius: 16,
+                  border: "none", background: "#58CC02",
+                  color: "#fff", fontSize: 16, fontWeight: 800,
+                  cursor: "pointer", textTransform: "uppercase",
+                  boxShadow: "0 4px 0 #46A302",
+                }}
+              >
+                Got It! ✓
+              </button>
+            </div>
+          )}
+
+          {/* Keyboard hint */}
+          <div style={{ textAlign: "center", fontSize: 11, color: "#3A4F58", fontWeight: 700, marginTop: 12 }}>
+            Space: flip · G: got it · S: skip · ← →: navigate
+          </div>
+
+          {/* Navigation arrows */}
+          {!flipped && (
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 20 }}>
+              <button
+                disabled={currentCard === 0}
+                onClick={() => { setCurrentCard(currentCard - 1); setFlipped(false); }}
+                style={{
+                  padding: "14px 28px", borderRadius: 16, border: "2px solid #1C2F36",
+                  background: "#1C2F36", color: currentCard === 0 ? "#3A4F58" : "#89A3AD",
+                  fontSize: 16, fontWeight: 800, cursor: currentCard === 0 ? "default" : "pointer",
+                }}
+              >
+                ← Prev
+              </button>
+              <button
+                disabled={currentCard === displayOrder.length - 1}
+                onClick={() => { setCurrentCard(currentCard + 1); setFlipped(false); }}
+                style={{
+                  padding: "14px 28px", borderRadius: 16, border: "2px solid #1C2F36",
+                  background: "#1C2F36", color: currentCard === displayOrder.length - 1 ? "#3A4F58" : "#89A3AD",
+                  fontSize: 16, fontWeight: 800, cursor: currentCard === displayOrder.length - 1 ? "default" : "pointer",
+                }}
+              >
+                Next →
+              </button>
+            </div>
+          )}
+        </div>
+
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap');
+          @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+          @keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0 } 50% { transform: scale(1.1) } 100% { transform: scale(1); opacity: 1 } }
+          @keyframes slideUp { from { transform: translateY(20px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+          @keyframes slideDown { from { transform: translateX(-50%) translateY(-40px); opacity: 0 } to { transform: translateX(-50%) translateY(0); opacity: 1 } }
+        `}</style>
+      </div>
+    );
+  }
+
+  /* ──── Home View ──── */
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: "#131F24",
+      fontFamily: "'Nunito', 'SF Pro Rounded', -apple-system, sans-serif",
+      color: "#fff",
+      maxWidth: 480,
+      margin: "0 auto",
+    }}>
+      {/* Top bar */}
+      <div style={{
+        padding: "20px 20px 0",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+      }}>
+        <div>
+          <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -0.5 }}>
+            🔐 Sec+ Cards
+          </div>
+          <div style={{ color: "#89A3AD", fontSize: 13, fontWeight: 700, marginTop: 2 }}>
+            SY0-701 Study Deck
+          </div>
+        </div>
+        <div style={{
+          display: "flex", alignItems: "center", gap: 8,
+          background: dailyStreak > 0 ? "linear-gradient(135deg, #3A2800, #2A1F00)" : "#1C2F36",
+          border: dailyStreak > 0 ? "2px solid #FFC80044" : "2px solid transparent",
+          borderRadius: 14, padding: "10px 16px",
+        }}>
+          <span style={{ fontSize: 22 }}>{dailyStreak > 0 ? "🔥" : "❄️"}</span>
+          <div>
+            <div style={{ fontWeight: 900, color: dailyStreak > 0 ? "#FFC800" : "#89A3AD", fontSize: 18, lineHeight: 1 }}>
+              {dailyStreak}
+            </div>
+            <div style={{ color: "#89A3AD", fontSize: 10, fontWeight: 700, lineHeight: 1, marginTop: 2 }}>
+              {dailyStreak === 1 ? "day" : "days"}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Daily streak banner */}
+      {!todayCompleted && (
+        <div style={{
+          margin: "12px 20px 0", padding: "12px 16px", borderRadius: 12,
+          background: dailyStreak > 0 ? "linear-gradient(135deg, #3A2800, #2A1F00)" : "#1C2F36",
+          border: dailyStreak > 0 ? "1px solid #FFC80033" : "1px solid #2A3F48",
+          display: "flex", alignItems: "center", gap: 10,
+        }}>
+          <span style={{ fontSize: 20 }}>{dailyStreak > 0 ? "⚡" : "👋"}</span>
+          <div style={{ fontSize: 13, fontWeight: 700, color: dailyStreak > 0 ? "#FFC800" : "#89A3AD" }}>
+            {dailyStreak > 0
+              ? `Complete a deck to keep your ${dailyStreak}-day streak alive!`
+              : "Complete all cards in any deck to start a streak!"
+            }
+          </div>
+        </div>
+      )}
+      {todayCompleted && dailyStreak > 0 && (
+        <div style={{
+          margin: "12px 20px 0", padding: "12px 16px", borderRadius: 12,
+          background: "rgba(88,204,2,0.1)", border: "1px solid rgba(88,204,2,0.2)",
+          display: "flex", alignItems: "center", gap: 10,
+        }}>
+          <span style={{ fontSize: 20 }}>✅</span>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#58CC02" }}>
+            Today's streak secured! Come back tomorrow to keep it going.
+          </div>
+        </div>
+      )}
+
+      {/* Overall progress */}
+      <div style={{ padding: "16px 20px" }}>
+        <div style={{
+          background: "#1C2F36", borderRadius: 16, padding: 16,
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#89A3AD" }}>Overall Progress</span>
+            <span style={{ fontSize: 13, fontWeight: 800, color: "#58CC02" }}>
+              {totalCards > 0 ? Math.round((totalMastered / totalCards) * 100) : 0}%
+            </span>
+          </div>
+          <div style={{ height: 12, background: "#0D1B21", borderRadius: 6, overflow: "hidden" }}>
+            <div style={{
+              height: "100%", width: `${totalCards > 0 ? (totalMastered / totalCards) * 100 : 0}%`,
+              background: "linear-gradient(90deg, #58CC02, #7AE528)",
+              borderRadius: 6, transition: "width 0.5s ease",
+            }} />
+          </div>
+          <div style={{
+            display: "flex", justifyContent: "space-between", marginTop: 10,
+            fontSize: 12, color: "#89A3AD", fontWeight: 700,
+          }}>
+            <span>{totalMastered} of {totalCards} cards</span>
+            <span>19 topics</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div style={{ padding: "0 20px 12px" }}>
+        <input
+          type="text"
+          placeholder="🔍 Search topics..."
+          value={searchQuery}
+          onChange={(e) => { setSearchQuery(e.target.value); setSelectedDomain(null); }}
+          style={{
+            width: "100%", padding: "12px 16px", borderRadius: 12,
+            border: "2px solid #1C2F36", background: "#1C2F36",
+            color: "#fff", fontSize: 14, fontWeight: 700, outline: "none",
+            boxSizing: "border-box",
+          }}
+        />
+      </div>
+
+      {/* Domain filters */}
+      <div style={{
+        display: "flex", gap: 8, padding: "0 20px 16px",
+        overflowX: "auto", whiteSpace: "nowrap",
+      }}>
+        <button
+          onClick={() => { setSelectedDomain(null); setSearchQuery(""); }}
+          style={{
+            padding: "8px 14px", borderRadius: 20,
+            border: !selectedDomain ? "2px solid #58CC02" : "2px solid #1C2F36",
+            background: !selectedDomain ? "rgba(88,204,2,0.15)" : "#1C2F36",
+            color: !selectedDomain ? "#58CC02" : "#89A3AD",
+            fontSize: 12, fontWeight: 800, cursor: "pointer", flexShrink: 0,
+          }}
+        >All</button>
+        {Object.keys(domains).map(domain => (
+          <button
+            key={domain}
+            onClick={() => { setSelectedDomain(domain === selectedDomain ? null : domain); setSearchQuery(""); }}
+            style={{
+              padding: "8px 14px", borderRadius: 20,
+              border: `2px solid ${selectedDomain === domain ? DOMAIN_COLORS[domain] : "#1C2F36"}`,
+              background: selectedDomain === domain ? `${DOMAIN_COLORS[domain]}22` : "#1C2F36",
+              color: selectedDomain === domain ? DOMAIN_COLORS[domain] : "#89A3AD",
+              fontSize: 12, fontWeight: 800, cursor: "pointer", flexShrink: 0,
+            }}
+          >
+            {domain.replace("Domain ", "D")}
+          </button>
+        ))}
+      </div>
+
+      {/* Section cards */}
+      <div style={{ padding: "0 20px 40px" }}>
+        {filteredSections.map((section, i) => {
+          const sectionCards = cardData?.[section.id] || [];
+          const masteredCount = sectionCards.filter((_, idx) => mastered[`${section.id}-${idx}`]).length;
+          const pct = sectionCards.length > 0 ? Math.round((masteredCount / sectionCards.length) * 100) : 0;
+          const isComplete = pct === 100;
+
+          return (
+            <div
+              key={section.id}
+              onClick={() => {
+                const sectionCards = cardData?.[section.id] || [];
+                const order = buildCardOrder(section.id, sectionCards, shuffled, unmasteredOnly, mastered);
+                setCardOrder(order);
+                setSelectedSection(section);
+                setCurrentCard(0);
+                setFlipped(false);
+                setView("study");
+              }}
+              style={{
+                background: "#1C2F36",
+                borderRadius: 16,
+                padding: 18,
+                marginBottom: 12,
+                cursor: "pointer",
+                borderLeft: `4px solid ${section.color}`,
+                transition: "transform 0.15s ease, box-shadow 0.15s ease",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+                animation: `slideUp 0.3s ease ${i * 0.03}s both`,
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.3)"; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.2)"; }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{
+                  width: 50, height: 50, borderRadius: 14,
+                  background: `${section.color}22`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 26, flexShrink: 0,
+                  border: isComplete ? `2px solid ${section.color}` : "none",
+                }}>
+                  {isComplete ? "✅" : section.icon}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 2 }}>
+                    {section.title}
+                  </div>
+                  <div style={{ fontSize: 11, color: section.color, fontWeight: 700, marginBottom: 6 }}>
+                    {section.domain} · {sectionCards.length} cards
+                  </div>
+                  <div style={{ height: 6, background: "#0D1B21", borderRadius: 3, overflow: "hidden" }}>
+                    <div style={{
+                      height: "100%", width: `${pct}%`,
+                      background: section.color, borderRadius: 3,
+                      transition: "width 0.5s ease",
+                    }} />
+                  </div>
+                </div>
+                <div style={{
+                  fontSize: 13, fontWeight: 800, color: pct > 0 ? section.color : "#3A4F58",
+                  flexShrink: 0,
+                }}>
+                  {pct}%
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap');
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+        * { -webkit-tap-highlight-color: transparent; }
+        ::-webkit-scrollbar { display: none; }
+      `}</style>
+    </div>
+  );
+}
+
+    // Mount the app
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(React.createElement(SecurityPlusApp));
+  </script>
+
+  <script>
+    // Register service worker for offline support
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").then(
+          (reg) => console.log("SW registered:", reg.scope),
+          (err) => console.log("SW registration failed:", err)
+        );
+      });
+    }
+  </script>
+</body>
+</html>
