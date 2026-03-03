@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -12,14 +12,13 @@
   <title>Sec+ Cards — SY0-701</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body, #root { height: 100%; width: 100%; background: #0B1215; overflow-x: hidden; }
+    html, body, #root { height: 100%; width: 100%; overflow-x: hidden; background: #0B1215; }
     body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
     #root { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
   </style>
 </head>
 <body>
   <div id="root"></div>
-
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
@@ -27,51 +26,60 @@
   <script type="text/babel" data-type="module">
     const { useState, useEffect, useCallback, useRef, useMemo } = React;
 
-    /* ───────────── Section metadata (no emojis) ───────────── */
-    const SECTIONS_META = [
-      { id:"fundamentals", title:"IT Security Fundamentals", domain:"Domain 1: General Security Concepts", color:"#58CC02" },
-      { id:"threats", title:"Threats & Attacks", domain:"Domain 2: Threats & Mitigations", color:"#FF4B4B" },
-      { id:"vulnerabilities", title:"Vulnerabilities", domain:"Domain 2: Threats & Mitigations", color:"#FF9600" },
-      { id:"ransomware", title:"Ransomware & Malware", domain:"Domain 2: Threats & Mitigations", color:"#CE82FF" },
-      { id:"onpath", title:"On-Path & Network Attacks", domain:"Domain 2: Threats & Mitigations", color:"#1CB0F6" },
-      { id:"encryption", title:"Encryption & Cryptography", domain:"Domain 3: Security Architecture", color:"#FF86D0" },
-      { id:"socialeng", title:"Social Engineering", domain:"Domain 2: Threats & Mitigations", color:"#FFC800" },
-      { id:"securing", title:"Securing IT Assets", domain:"Domain 3: Security Architecture", color:"#58CC02" },
-      { id:"architecture", title:"Security Architecture", domain:"Domain 3: Security Architecture", color:"#1CB0F6" },
-      { id:"techniques", title:"Common Security Techniques", domain:"Domain 3: Security Architecture", color:"#FF9600" },
-      { id:"vulnmgmt", title:"Vulnerability Management", domain:"Domain 4: Security Operations", color:"#CE82FF" },
-      { id:"monitoring", title:"Alerting, Monitoring & SIEM", domain:"Domain 4: Security Operations", color:"#FF4B4B" },
-      { id:"email", title:"Email & Endpoint Security", domain:"Domain 4: Security Operations", color:"#1CB0F6" },
-      { id:"iam", title:"Identity & Access Management", domain:"Domain 4: Security Operations", color:"#58CC02" },
-      { id:"automation", title:"Automation & Orchestration", domain:"Domain 4: Security Operations", color:"#FFC800" },
-      { id:"incident", title:"Incident Response", domain:"Domain 4: Security Operations", color:"#FF4B4B" },
-      { id:"governance", title:"Governance & Compliance", domain:"Domain 5: Program Management", color:"#CE82FF" },
-      { id:"physical", title:"Physical Security", domain:"Domain 5: Program Management", color:"#FF9600" },
-      { id:"resilience", title:"Resilience & Recovery", domain:"Domain 5: Program Management", color:"#1CB0F6" },
+    /* ═══════════════ DOMAIN & SECTION CONFIG ═══════════════ */
+    const DOMAINS = [
+      { key: "d1", label: "Domain 1: General Security Concepts", short: "D1: Concepts", color: "#58CC02" },
+      { key: "d2", label: "Domain 2: Threats & Mitigations", short: "D2: Threats", color: "#FF4B4B" },
+      { key: "d3", label: "Domain 3: Security Architecture", short: "D3: Architecture", color: "#1CB0F6" },
+      { key: "d4", label: "Domain 4: Security Operations", short: "D4: Operations", color: "#CE82FF" },
+      { key: "d5", label: "Domain 5: Program Management", short: "D5: Program Mgmt", color: "#FF9600" },
     ];
+    const DOMAIN_MAP = {}; DOMAINS.forEach(d => DOMAIN_MAP[d.label] = d);
 
-    /* Domain label abbreviations for pills */
-    const DOMAIN_SHORT = {
-      "Domain 1: General Security Concepts": "D1: Concepts",
-      "Domain 2: Threats & Mitigations": "D2: Threats",
-      "Domain 3: Security Architecture": "D3: Architecture",
-      "Domain 4: Security Operations": "D4: Operations",
-      "Domain 5: Program Management": "D5: Program Mgmt",
-    };
+    const SECTIONS_META = [
+      { id:"fundamentals", title:"IT Security Fundamentals", domain:"Domain 1: General Security Concepts" },
+      { id:"threats", title:"Threats & Attacks", domain:"Domain 2: Threats & Mitigations" },
+      { id:"vulnerabilities", title:"Vulnerabilities", domain:"Domain 2: Threats & Mitigations" },
+      { id:"ransomware", title:"Ransomware & Malware", domain:"Domain 2: Threats & Mitigations" },
+      { id:"onpath", title:"On-Path & Network Attacks", domain:"Domain 2: Threats & Mitigations" },
+      { id:"encryption", title:"Encryption & Cryptography", domain:"Domain 3: Security Architecture" },
+      { id:"socialeng", title:"Social Engineering", domain:"Domain 2: Threats & Mitigations" },
+      { id:"securing", title:"Securing IT Assets", domain:"Domain 3: Security Architecture" },
+      { id:"architecture", title:"Security Architecture", domain:"Domain 3: Security Architecture" },
+      { id:"techniques", title:"Common Security Techniques", domain:"Domain 3: Security Architecture" },
+      { id:"vulnmgmt", title:"Vulnerability Management", domain:"Domain 4: Security Operations" },
+      { id:"monitoring", title:"Alerting, Monitoring & SIEM", domain:"Domain 4: Security Operations" },
+      { id:"email", title:"Email & Endpoint Security", domain:"Domain 4: Security Operations" },
+      { id:"iam", title:"Identity & Access Management", domain:"Domain 4: Security Operations" },
+      { id:"automation", title:"Automation & Orchestration", domain:"Domain 4: Security Operations" },
+      { id:"incident", title:"Incident Response", domain:"Domain 4: Security Operations" },
+      { id:"governance", title:"Governance & Compliance", domain:"Domain 5: Program Management" },
+      { id:"physical", title:"Physical Security", domain:"Domain 5: Program Management" },
+      { id:"resilience", title:"Resilience & Recovery", domain:"Domain 5: Program Management" },
+    ];
+    // Add color from domain
+    SECTIONS_META.forEach(s => { s.color = DOMAIN_MAP[s.domain]?.color || "#888"; });
 
-    const DOMAIN_COLORS = {
-      "Domain 1: General Security Concepts": "#58CC02",
-      "Domain 2: Threats & Mitigations": "#FF4B4B",
-      "Domain 3: Security Architecture": "#1CB0F6",
-      "Domain 4: Security Operations": "#CE82FF",
-      "Domain 5: Program Management": "#FF9600",
-    };
-
-    /* ───────────── Helpers ───────────── */
+    /* ═══════════════ HELPERS ═══════════════ */
     const getToday = () => new Date().toISOString().split("T")[0];
     const getYesterday = () => { const d = new Date(); d.setDate(d.getDate() - 1); return d.toISOString().split("T")[0]; };
+    const shuffle = (arr) => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
-    /* ───────────── Card Data ───────────── */
+    /* ═══════════════ THEMES ═══════════════ */
+    const THEMES = {
+      dark: {
+        bg: "#0B1215", card: "#141E23", cardHover: "#1A2830", border: "#1C2A31",
+        textPrimary: "#E8F0F2", textSecondary: "#7A9AA8", textMuted: "#3D5560",
+        cardFaceBack: "#141E23", overlay: "rgba(0,0,0,0.75)",
+      },
+      light: {
+        bg: "#F4F6F8", card: "#FFFFFF", cardHover: "#F0F2F5", border: "#E2E8ED",
+        textPrimary: "#1A2B33", textSecondary: "#5A7A88", textMuted: "#9CB0BA",
+        cardFaceBack: "#FFFFFF", overlay: "rgba(255,255,255,0.85)",
+      },
+    };
+
+    /* ═══════════════ CARD DATA ═══════════════ */
     function generateCards() {
       return {
         "fundamentals": [
@@ -286,11 +294,71 @@
       };
     }
 
+    /* ═══════════════ SVG PROGRESS RING ═══════════════ */
+    function ProgressRing({ pct, color, size = 52, stroke = 4, label, theme }) {
+      const r = (size - stroke) / 2;
+      const circ = 2 * Math.PI * r;
+      const off = circ - (pct / 100) * circ;
+      return (
+        <div style={{ display:"flex",flexDirection:"column",alignItems:"center",gap:4 }}>
+          <div style={{ position:"relative",width:size,height:size }}>
+            <svg width={size} height={size} style={{ transform:"rotate(-90deg)",display:"block" }}>
+              <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={theme.border} strokeWidth={stroke} />
+              <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={stroke}
+                strokeDasharray={circ} strokeDashoffset={off} strokeLinecap="round"
+                style={{ transition:"stroke-dashoffset 0.6s ease" }} />
+            </svg>
+            <div style={{ position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center" }}>
+              <span style={{ fontSize:10,fontWeight:900,color }}>{pct}%</span>
+            </div>
+          </div>
+          {label && <div style={{ fontSize:9,fontWeight:700,color:theme.textMuted,textAlign:"center",lineHeight:1.1 }}>{label}</div>}
+        </div>
+      );
+    }
+
+    /* ═══════════════ SWIPE HOOK ═══════════════ */
+    function useSwipe(onLeft, onRight) {
+      const ref = useRef(null);
+      const startX = useRef(0);
+      const startY = useRef(0);
+      const onLeftRef = useRef(onLeft);
+      const onRightRef = useRef(onRight);
+      onLeftRef.current = onLeft;
+      onRightRef.current = onRight;
+      useEffect(() => {
+        const el = ref.current; if (!el) return;
+        const ts = (e) => { startX.current = e.touches[0].clientX; startY.current = e.touches[0].clientY; };
+        const te = (e) => {
+          const dx = e.changedTouches[0].clientX - startX.current;
+          const dy = e.changedTouches[0].clientY - startY.current;
+          if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+            if (dx < 0) onLeftRef.current?.(); else onRightRef.current?.();
+          }
+        };
+        el.addEventListener("touchstart", ts, { passive: true });
+        el.addEventListener("touchend", te, { passive: true });
+        return () => { el.removeEventListener("touchstart", ts); el.removeEventListener("touchend", te); };
+      }, []); // eslint-disable-line
+      return ref;
+    }
+
+    /* ═══════════════ GLOBAL CSS ═══════════════ */
+    const GLOBAL_CSS = `
+      @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap');
+      @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+      @keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0 } 50% { transform: scale(1.05) } 100% { transform: scale(1); opacity: 1 } }
+      @keyframes slideUp { from { transform: translateY(12px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+      @keyframes slideDown { from { transform: translateX(-50%) translateY(-40px); opacity: 0 } to { transform: translateX(-50%) translateY(0); opacity: 1 } }
+      * { -webkit-tap-highlight-color: transparent; }
+      ::-webkit-scrollbar { display: none; }
+    `;
+
     /* ═══════════════════════════════════════════ */
     /*                  MAIN APP                  */
     /* ═══════════════════════════════════════════ */
-    function SecurityPlusApp() {
-      const [view, setView] = useState("home"); // home | study | random
+    function App() {
+      const [view, setView] = useState("home");
       const [selectedSection, setSelectedSection] = useState(null);
       const [cardData] = useState(() => generateCards());
       const [progress, setProgress] = useState({});
@@ -298,7 +366,14 @@
       const [flipped, setFlipped] = useState(false);
       const [mastered, setMastered] = useState({});
       const [searchQuery, setSearchQuery] = useState("");
-      const [selectedDomain, setSelectedDomain] = useState(null);
+
+      // Theme
+      const [themeName, setThemeName] = useState(() => {
+        try { return localStorage.getItem("secplus_theme") || "dark"; } catch { return "dark"; }
+      });
+      const T = THEMES[themeName];
+      useEffect(() => { try { localStorage.setItem("secplus_theme", themeName); } catch {} }, [themeName]);
+      useEffect(() => { document.getElementById("root").style.background = T.bg; document.body.style.background = T.bg; }, [T.bg]);
 
       // Streak
       const [dailyStreak, setDailyStreak] = useState(0);
@@ -308,36 +383,52 @@
       const [showCelebration, setShowCelebration] = useState(false);
       const [showStreakPopup, setShowStreakPopup] = useState(false);
 
-      // Study mode
-      const [shuffled, setShuffled] = useState(false);
+      // Study
+      const [shuffledMode, setShuffledMode] = useState(false);
       const [unmasteredOnly, setUnmasteredOnly] = useState(false);
       const [cardOrder, setCardOrder] = useState([]);
-      const studyStateRef = useRef({});
+      const [showResetConfirm, setShowResetConfirm] = useState(false);
 
-      // Random mode
+      // Random
       const [randomPool, setRandomPool] = useState([]);
       const [randomIndex, setRandomIndex] = useState(0);
       const [randomCardsStudied, setRandomCardsStudied] = useState(0);
+
+      // Review mistakes
+      const [mistakePool, setMistakePool] = useState([]);
+      const [mistakeIndex, setMistakeIndex] = useState(0);
+
+      // Quiz
+      const [quizPool, setQuizPool] = useState([]);
+      const [quizIndex, setQuizIndex] = useState(0);
+      const [quizChoices, setQuizChoices] = useState([]);
+      const [quizSelected, setQuizSelected] = useState(null);
+      const [quizScore, setQuizScore] = useState(0);
+      const [quizTotal, setQuizTotal] = useState(0);
+
+      // Collapsible domains
+      const [collapsedDomains, setCollapsedDomains] = useState({});
+
+      // Session tracking
+      const [sessionStart, setSessionStart] = useState(null);
+      const [sessionCards, setSessionCards] = useState(0);
+      const [showSessionStats, setShowSessionStats] = useState(false);
 
       // Sound
       const [soundEnabled, setSoundEnabled] = useState(() => {
         try { return JSON.parse(localStorage.getItem("secplus_soundEnabled") ?? "true"); } catch { return true; }
       });
       useEffect(() => { try { localStorage.setItem("secplus_soundEnabled", JSON.stringify(soundEnabled)); } catch {} }, [soundEnabled]);
-
       const audioCtxRef = useRef(null);
       const playSfx = useCallback((type) => {
         if (!soundEnabled) return;
         try {
-          const AC = window.AudioContext || window.webkitAudioContext;
-          if (!AC) return;
+          const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
           if (!audioCtxRef.current) audioCtxRef.current = new AC();
           const ctx = audioCtxRef.current;
           if (ctx.state === "suspended") ctx.resume().catch(() => {});
-          const now = ctx.currentTime;
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          const map = { flip:{f:520,d:0.06}, nav:{f:440,d:0.05}, gotIt:{f:740,d:0.08}, streak:{f:880,d:0.10} };
+          const now = ctx.currentTime, osc = ctx.createOscillator(), gain = ctx.createGain();
+          const map = { flip:{f:520,d:0.06}, nav:{f:440,d:0.05}, gotIt:{f:740,d:0.08}, streak:{f:880,d:0.10}, wrong:{f:300,d:0.12}, right:{f:660,d:0.10} };
           const { f, d } = map[type] || map.nav;
           osc.type = "sine"; osc.frequency.setValueAtTime(f, now);
           gain.gain.setValueAtTime(0.0001, now);
@@ -348,561 +439,632 @@
         } catch {}
       }, [soundEnabled]);
 
-      // ─── Persistence ───
+      // Persistence
       useEffect(() => {
         try {
           const r = localStorage.getItem("streak-data");
-          if (r) {
-            const data = JSON.parse(r);
-            const today = getToday(), yesterday = getYesterday();
-            if (data.lastStudyDate === today) { setDailyStreak(data.streak); setLastStudyDate(data.lastStudyDate); setTodayCompleted(true); setSectionsCompletedToday(new Set(data.sectionsToday || [])); }
-            else if (data.lastStudyDate === yesterday) { setDailyStreak(data.streak); setLastStudyDate(data.lastStudyDate); }
+          if (r) { const d = JSON.parse(r), today = getToday(), yest = getYesterday();
+            if (d.lastStudyDate === today) { setDailyStreak(d.streak); setLastStudyDate(d.lastStudyDate); setTodayCompleted(true); setSectionsCompletedToday(new Set(d.sectionsToday || [])); }
+            else if (d.lastStudyDate === yest) { setDailyStreak(d.streak); setLastStudyDate(d.lastStudyDate); }
           }
         } catch {}
-        try {
-          const m = localStorage.getItem("mastered-cards"); if (m) setMastered(JSON.parse(m));
-          const p = localStorage.getItem("card-progress"); if (p) setProgress(JSON.parse(p));
-        } catch {}
+        try { const m = localStorage.getItem("mastered-cards"); if (m) setMastered(JSON.parse(m)); } catch {}
+        try { const p = localStorage.getItem("card-progress"); if (p) setProgress(JSON.parse(p)); } catch {}
       }, []);
-
-      const saveStreak = useCallback((streak, lastDate, sectionsToday) => {
-        try { localStorage.setItem("streak-data", JSON.stringify({ streak, lastStudyDate: lastDate, sectionsToday: [...sectionsToday] })); } catch {}
-      }, []);
-
+      const saveStreak = useCallback((s, d, st) => { try { localStorage.setItem("streak-data", JSON.stringify({ streak:s, lastStudyDate:d, sectionsToday:[...st] })); } catch {} }, []);
       useEffect(() => { if (Object.keys(mastered).length > 0) try { localStorage.setItem("mastered-cards", JSON.stringify(mastered)); } catch {} }, [mastered]);
       useEffect(() => { if (Object.keys(progress).length > 0) try { localStorage.setItem("card-progress", JSON.stringify(progress)); } catch {} }, [progress]);
 
-      // ─── Helpers ───
-      const buildCardOrder = useCallback((sectionId, cards, doShuffle, doUnmastered, currentMastered) => {
-        let indices = cards.map((_, i) => i);
-        if (doUnmastered) { const r = indices.filter(i => !currentMastered[`${sectionId}-${i}`]); indices = r.length > 0 ? r : indices; }
-        if (doShuffle) { for (let i = indices.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [indices[i], indices[j]] = [indices[j], indices[i]]; } }
-        return indices;
+      // Helpers
+      const buildCardOrder = useCallback((sid, cards, doShuf, doUnm, mst) => {
+        let idx = cards.map((_, i) => i);
+        if (doUnm) { const r = idx.filter(i => !mst[`${sid}-${i}`]); idx = r.length > 0 ? r : idx; }
+        if (doShuf) idx = shuffle(idx);
+        return idx;
       }, []);
 
-      const markStudied = useCallback((sectionId, cardIndex) => {
-        setProgress(prev => {
-          const section = prev[sectionId] || { studied: 0, mastered: 0, cards: {} };
-          const cards = { ...section.cards, [cardIndex]: true };
-          return { ...prev, [sectionId]: { ...section, studied: Object.keys(cards).length, cards } };
-        });
+      const markStudied = useCallback((sid, ci) => {
+        setProgress(p => { const s = p[sid] || { studied:0, cards:{} }; const c = { ...s.cards, [ci]: true }; return { ...p, [sid]: { ...s, studied: Object.keys(c).length, cards: c } }; });
+        setSessionCards(c => c + 1);
       }, []);
 
-      const markMastered = useCallback((sectionId, cardIndex) => {
-        const key = `${sectionId}-${cardIndex}`;
+      const markMastered = useCallback((sid, ci) => {
+        const key = `${sid}-${ci}`;
         setMastered(prev => {
-          const updated = { ...prev, [key]: true };
-          const sectionCards = cardData?.[sectionId] || [];
-          const allMastered = sectionCards.every((_, idx) => updated[`${sectionId}-${idx}`]);
-          if (allMastered && !sectionsCompletedToday.has(sectionId)) {
-            const today = getToday();
-            const newSections = new Set(sectionsCompletedToday); newSections.add(sectionId);
-            setSectionsCompletedToday(newSections);
+          const up = { ...prev, [key]: true };
+          const sc = cardData?.[sid] || [];
+          if (sc.every((_, i) => up[`${sid}-${i}`]) && !sectionsCompletedToday.has(sid)) {
+            const today = getToday(), ns = new Set(sectionsCompletedToday); ns.add(sid); setSectionsCompletedToday(ns);
             if (!todayCompleted) {
-              const ns = (lastStudyDate === getYesterday() || lastStudyDate === today) ? dailyStreak + 1 : 1;
-              setDailyStreak(ns); playSfx("streak"); setLastStudyDate(today); setTodayCompleted(true);
-              setShowStreakPopup(true); setTimeout(() => setShowStreakPopup(false), 3000);
-              saveStreak(ns, today, newSections);
-            } else { saveStreak(dailyStreak, today, newSections); }
+              const nk = (lastStudyDate === getYesterday() || lastStudyDate === today) ? dailyStreak + 1 : 1;
+              setDailyStreak(nk); playSfx("streak"); setLastStudyDate(today); setTodayCompleted(true);
+              setShowStreakPopup(true); setTimeout(() => setShowStreakPopup(false), 3000); saveStreak(nk, today, ns);
+            } else saveStreak(dailyStreak, today, ns);
             setShowCelebration(true); setTimeout(() => setShowCelebration(false), 2500);
           }
-          return updated;
+          return up;
         });
-        markStudied(sectionId, cardIndex);
+        markStudied(sid, ci);
       }, [markStudied, cardData, sectionsCompletedToday, todayCompleted, lastStudyDate, dailyStreak, saveStreak, playSfx]);
 
-      // ─── Build random pool ───
-      const buildRandomPool = useCallback(() => {
-        const pool = [];
-        Object.keys(cardData).forEach(sectionId => {
-          cardData[sectionId].forEach((card, idx) => {
-            pool.push({ sectionId, cardIdx: idx, card });
-          });
+      const resetSection = useCallback((sid) => {
+        setMastered(prev => {
+          const up = { ...prev };
+          Object.keys(up).forEach(k => { if (k.startsWith(sid + "-")) delete up[k]; });
+          try { localStorage.setItem("mastered-cards", JSON.stringify(up)); } catch {}
+          return up;
         });
-        // Fisher-Yates shuffle
-        for (let i = pool.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [pool[i], pool[j]] = [pool[j], pool[i]];
-        }
+        setProgress(prev => { const up = { ...prev }; delete up[sid]; try { localStorage.setItem("card-progress", JSON.stringify(up)); } catch {} return up; });
+        setShowResetConfirm(false);
+      }, []);
+
+      // All cards flat
+      const allCards = useMemo(() => {
+        const pool = [];
+        Object.keys(cardData).forEach(sid => cardData[sid].forEach((card, idx) => pool.push({ sectionId: sid, cardIdx: idx, card })));
         return pool;
       }, [cardData]);
 
-      const totalCards = useMemo(() => cardData ? Object.values(cardData).reduce((s, c) => s + c.length, 0) : 0, [cardData]);
+      const totalCards = allCards.length;
       const totalMastered = Object.keys(mastered).length;
 
-      const domains = useMemo(() => {
-        const d = {};
-        SECTIONS_META.forEach(s => { if (!d[s.domain]) d[s.domain] = []; d[s.domain].push(s); });
-        return d;
-      }, []);
+      // Domain stats
+      const domainStats = useMemo(() => {
+        const stats = {};
+        DOMAINS.forEach(d => { stats[d.label] = { total: 0, mastered: 0 }; });
+        SECTIONS_META.forEach(s => {
+          const cards = cardData?.[s.id] || [];
+          stats[s.domain].total += cards.length;
+          cards.forEach((_, i) => { if (mastered[`${s.id}-${i}`]) stats[s.domain].mastered++; });
+        });
+        return stats;
+      }, [cardData, mastered]);
 
-      const filteredSections = searchQuery
-        ? SECTIONS_META.filter(s => s.title.toLowerCase().includes(searchQuery.toLowerCase()) || s.domain.toLowerCase().includes(searchQuery.toLowerCase()))
-        : selectedDomain ? SECTIONS_META.filter(s => s.domain === selectedDomain) : SECTIONS_META;
+      // Build review mistakes pool
+      const buildMistakePool = useCallback(() => {
+        const pool = [];
+        Object.keys(cardData).forEach(sid => {
+          const studied = progress[sid]?.cards || {};
+          cardData[sid].forEach((card, idx) => {
+            if (studied[idx] && !mastered[`${sid}-${idx}`]) pool.push({ sectionId: sid, cardIdx: idx, card });
+          });
+        });
+        return shuffle(pool);
+      }, [cardData, progress, mastered]);
 
-      // Keyboard
-      useEffect(() => { studyStateRef.current = { flipped, currentCard, cardOrder, selectedSection, view, randomPool, randomIndex }; }, [flipped, currentCard, cardOrder, selectedSection, view, randomPool, randomIndex]);
+      // Build quiz
+      const buildQuiz = useCallback(() => {
+        const pool = shuffle([...allCards]);
+        return pool;
+      }, [allCards]);
+
+      const generateQuizChoices = useCallback((correctCard) => {
+        if (!correctCard) return { choices: [], correct: "" };
+        const correctAnswer = correctCard.card.c.split("\n")[0];
+        const wrong = allCards.filter(c => c.card.t !== correctCard.card.t);
+        const picks = shuffle(wrong).slice(0, 3).map(c => c.card.c.split("\n")[0]);
+        const all = shuffle([...picks, correctAnswer]);
+        return { choices: all, correct: correctAnswer };
+      }, [allCards]);
+
+      // Navigation helpers
+      const goHome = useCallback(() => {
+        if (sessionStart && sessionCards > 2 && ["study","random","review","quiz"].includes(view)) {
+          setShowSessionStats(true);
+        } else {
+          setView("home"); setSessionStart(null); setSessionCards(0);
+        }
+        setFlipped(false); setCurrentCard(0);
+      }, [sessionStart, sessionCards, view]);
+
+      const dismissSession = useCallback(() => { setShowSessionStats(false); setView("home"); setSessionStart(null); setSessionCards(0); setFlipped(false); }, []);
+
+      const startSession = useCallback(() => { setSessionStart(Date.now()); setSessionCards(0); }, []);
+
+      const font = "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif";
+
+      /* ─── Swipe handlers ─── */
+      const swipeLeft = useCallback(() => {
+        if (view === "study") { if (!flipped) { setFlipped(true); } else if (currentCard < cardOrder.length - 1) { playSfx("nav"); setCurrentCard(c => c + 1); setFlipped(false); } }
+        else if (view === "random") { if (!flipped) setFlipped(true); else { playSfx("nav"); setFlipped(false); setRandomIndex(i => (i + 1) % randomPool.length); setRandomCardsStudied(c => c + 1); } }
+        else if (view === "review") { if (!flipped) setFlipped(true); else { playSfx("nav"); setFlipped(false); setMistakeIndex(i => Math.min(i + 1, mistakePool.length - 1)); } }
+      }, [view, flipped, currentCard, cardOrder, randomPool, mistakePool, playSfx]);
+
+      const swipeRight = useCallback(() => {
+        if (view === "study" && currentCard > 0) { playSfx("nav"); setCurrentCard(c => c - 1); setFlipped(false); }
+        else if (view === "review" && mistakeIndex > 0) { playSfx("nav"); setMistakeIndex(i => i - 1); setFlipped(false); }
+      }, [view, currentCard, mistakeIndex, playSfx]);
+
+      const swipeRef = useSwipe(swipeLeft, swipeRight);
+
+      /* ─── Keyboard ─── */
+      const stateRef = useRef({});
+      useEffect(() => { stateRef.current = { view, flipped, currentCard, cardOrder, selectedSection, randomPool, randomIndex, mistakePool, mistakeIndex }; },
+        [view, flipped, currentCard, cardOrder, selectedSection, randomPool, randomIndex, mistakePool, mistakeIndex]);
 
       useEffect(() => {
-        if (view !== "study" && view !== "random") return;
+        if (!["study","random","review"].includes(view)) return;
         const handler = (e) => {
-          const s = studyStateRef.current;
+          const s = stateRef.current;
           if (s.view === "study") {
-            const origIdx = s.cardOrder[s.currentCard] ?? s.currentCard;
-            if (e.code === "Space" || e.code === "ArrowUp") { e.preventDefault(); if (!s.flipped) markStudied(s.selectedSection.id, origIdx); playSfx("flip"); setFlipped(f => !f); }
-            else if (e.code === "ArrowRight") { if (s.currentCard < s.cardOrder.length - 1) { playSfx("nav"); setCurrentCard(c => c + 1); setFlipped(false); } }
-            else if (e.code === "ArrowLeft") { if (s.currentCard > 0) { playSfx("nav"); setCurrentCard(c => c - 1); setFlipped(false); } }
-            else if ((e.code === "KeyG" || e.code === "Enter") && s.flipped) { e.preventDefault(); playSfx("gotIt"); markMastered(s.selectedSection.id, origIdx); setFlipped(false); if (s.currentCard < s.cardOrder.length - 1) setCurrentCard(c => c + 1); }
+            const oi = s.cardOrder[s.currentCard] ?? s.currentCard;
+            if (e.code === "Space" || e.code === "ArrowUp") { e.preventDefault(); if (!s.flipped) markStudied(s.selectedSection.id, oi); playSfx("flip"); setFlipped(f => !f); }
+            else if (e.code === "ArrowRight" && s.currentCard < s.cardOrder.length - 1) { playSfx("nav"); setCurrentCard(c => c + 1); setFlipped(false); }
+            else if (e.code === "ArrowLeft" && s.currentCard > 0) { playSfx("nav"); setCurrentCard(c => c - 1); setFlipped(false); }
+            else if ((e.code === "KeyG" || e.code === "Enter") && s.flipped) { e.preventDefault(); playSfx("gotIt"); markMastered(s.selectedSection.id, oi); setFlipped(false); if (s.currentCard < s.cardOrder.length - 1) setCurrentCard(c => c + 1); }
             else if (e.code === "KeyS" && s.flipped) { setFlipped(false); if (s.currentCard < s.cardOrder.length - 1) setCurrentCard(c => c + 1); }
           } else if (s.view === "random") {
-            if (e.code === "Space" || e.code === "ArrowUp") { e.preventDefault(); playSfx("flip"); setFlipped(f => !f); }
-            else if ((e.code === "ArrowRight" || e.code === "KeyS" || e.code === "KeyG" || e.code === "Enter")) {
-              if (s.flipped) {
-                if (e.code === "KeyG" || e.code === "Enter") {
-                  playSfx("gotIt");
-                }
-                playSfx("nav"); setFlipped(false);
-                setRandomIndex(i => (i + 1) % s.randomPool.length);
-                setRandomCardsStudied(c => c + 1);
-              }
+            if (e.code === "Space") { e.preventDefault(); playSfx("flip"); setFlipped(f => !f); }
+            else if (["ArrowRight","KeyS","KeyG","Enter"].includes(e.code) && s.flipped) {
+              playSfx(e.code === "KeyG" || e.code === "Enter" ? "gotIt" : "nav");
+              setFlipped(false); setRandomIndex(i => (i + 1) % s.randomPool.length); setRandomCardsStudied(c => c + 1);
             }
+          } else if (s.view === "review") {
+            if (e.code === "Space") { e.preventDefault(); playSfx("flip"); setFlipped(f => !f); }
+            else if (e.code === "ArrowRight" && s.mistakeIndex < s.mistakePool.length - 1) { playSfx("nav"); setMistakeIndex(i => i + 1); setFlipped(false); }
+            else if (e.code === "ArrowLeft" && s.mistakeIndex > 0) { playSfx("nav"); setMistakeIndex(i => i - 1); setFlipped(false); }
           }
         };
         window.addEventListener("keydown", handler);
         return () => window.removeEventListener("keydown", handler);
       }, [view, markStudied, markMastered, playSfx]);
 
-      /* ────── Shared Styles ────── */
-      const S = {
-        bg: "#0B1215",
-        card: "#141E23",
-        cardHover: "#1A2830",
-        border: "#1C2A31",
-        textPrimary: "#E8F0F2",
-        textSecondary: "#7A9AA8",
-        textMuted: "#3D5560",
-        font: "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif",
-      };
-
-      /* ────── Overlay Components ────── */
-      const CelebrationOverlay = () => showCelebration ? (
-        <div style={{ position:"fixed",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.75)",zIndex:999,animation:"fadeIn 0.3s ease",backdropFilter:"blur(8px)" }}>
-          <div style={{ textAlign:"center",animation:"bounceIn 0.5s ease",background:S.card,borderRadius:20,padding:"36px 44px",border:`1px solid ${S.border}`,boxShadow:"0 24px 80px rgba(0,0,0,0.6)" }}>
-            <div style={{ fontSize:18,fontWeight:800,color:S.textPrimary,marginBottom:6,letterSpacing:0.5 }}>DECK COMPLETE</div>
-            <div style={{ fontSize:13,color:S.textSecondary,fontWeight:600 }}>Every card in this section mastered</div>
-            <div style={{ width:40,height:3,background:"#58CC02",borderRadius:2,margin:"14px auto 0" }} />
-          </div>
-        </div>
-      ) : null;
-
-      const StreakPopup = () => showStreakPopup ? (
-        <div style={{ position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",zIndex:1000,animation:"slideDown 0.4s ease" }}>
-          <div style={{ background:S.card,border:"1px solid #FFC80044",borderRadius:14,padding:"14px 24px",display:"flex",alignItems:"center",gap:14,boxShadow:"0 12px 40px rgba(0,0,0,0.5)" }}>
-            <div style={{ width:44,height:44,borderRadius:12,background:"rgba(255,200,0,0.12)",display:"flex",alignItems:"center",justifyContent:"center" }}>
-              <span style={{ fontSize:22,color:"#FFC800",fontWeight:900 }}>{dailyStreak}</span>
-            </div>
-            <div>
-              <div style={{ fontSize:15,fontWeight:800,color:"#FFC800" }}>Day Streak!</div>
-              <div style={{ fontSize:11,fontWeight:600,color:S.textSecondary }}>{dailyStreak === 1 ? "Come back tomorrow to keep it going" : "Keep it going!"}</div>
-            </div>
-          </div>
-        </div>
-      ) : null;
-
-      /* ────── Back Button ────── */
-      const BackButton = ({ onClick }) => (
-        <button onClick={onClick} style={{ background:"none",border:"none",color:S.textSecondary,fontSize:14,cursor:"pointer",padding:"8px 0",fontWeight:700,fontFamily:S.font,display:"flex",alignItems:"center",gap:6 }}>
+      /* ─── Shared Components ─── */
+      const BackBtn = ({ onClick }) => (
+        <button onClick={onClick} style={{ background:"none",border:"none",color:T.textSecondary,fontSize:14,cursor:"pointer",padding:"8px 0",fontWeight:700,fontFamily:font,display:"flex",alignItems:"center",gap:6 }}>
           <span style={{ fontSize:18 }}>&#8592;</span> Back
         </button>
       );
 
-      /* ═══════════════════ RANDOM VIEW ═══════════════════ */
+      const Overlays = () => (
+        <>
+          {showCelebration && (
+            <div style={{ position:"fixed",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:T.overlay,zIndex:999,animation:"fadeIn 0.3s ease",backdropFilter:"blur(8px)" }}>
+              <div style={{ textAlign:"center",animation:"bounceIn 0.5s ease",background:T.card,borderRadius:20,padding:"36px 44px",border:`1px solid ${T.border}` }}>
+                <div style={{ fontSize:18,fontWeight:800,color:T.textPrimary,marginBottom:6 }}>DECK COMPLETE</div>
+                <div style={{ fontSize:13,color:T.textSecondary,fontWeight:600 }}>Every card in this section mastered</div>
+                <div style={{ width:40,height:3,background:"#58CC02",borderRadius:2,margin:"14px auto 0" }} />
+              </div>
+            </div>
+          )}
+          {showStreakPopup && (
+            <div style={{ position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",zIndex:1000,animation:"slideDown 0.4s ease" }}>
+              <div style={{ background:T.card,border:"1px solid #FFC80044",borderRadius:14,padding:"14px 24px",display:"flex",alignItems:"center",gap:14,boxShadow:"0 12px 40px rgba(0,0,0,0.3)" }}>
+                <div style={{ width:44,height:44,borderRadius:12,background:"rgba(255,200,0,0.12)",display:"flex",alignItems:"center",justifyContent:"center" }}>
+                  <span style={{ fontSize:22,color:"#FFC800",fontWeight:900 }}>{dailyStreak}</span>
+                </div>
+                <div>
+                  <div style={{ fontSize:15,fontWeight:800,color:"#FFC800" }}>Day Streak!</div>
+                  <div style={{ fontSize:11,fontWeight:600,color:T.textSecondary }}>{dailyStreak === 1 ? "Come back tomorrow" : "Keep it going!"}</div>
+                </div>
+              </div>
+            </div>
+          )}
+          {showSessionStats && (
+            <div style={{ position:"fixed",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:T.overlay,zIndex:999,backdropFilter:"blur(8px)" }}>
+              <div style={{ background:T.card,borderRadius:20,padding:"32px 36px",border:`1px solid ${T.border}`,textAlign:"center",minWidth:260 }}>
+                <div style={{ fontSize:16,fontWeight:800,color:T.textPrimary,marginBottom:16 }}>Session Summary</div>
+                <div style={{ display:"flex",justifyContent:"center",gap:24,marginBottom:20 }}>
+                  <div><div style={{ fontSize:28,fontWeight:900,color:"#58CC02" }}>{sessionCards}</div><div style={{ fontSize:10,fontWeight:700,color:T.textMuted }}>cards</div></div>
+                  <div><div style={{ fontSize:28,fontWeight:900,color:"#1CB0F6" }}>{sessionStart ? Math.round((Date.now() - sessionStart) / 60000) : 0}</div><div style={{ fontSize:10,fontWeight:700,color:T.textMuted }}>minutes</div></div>
+                </div>
+                <button onClick={dismissSession} style={{ padding:"12px 32px",borderRadius:10,border:"none",background:"#58CC02",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:font }}>Done</button>
+              </div>
+            </div>
+          )}
+        </>
+      );
+
+      /* Flashcard component used in study, random, review */
+      const FlashCard = ({ card, color, flipped: fl, onFlip, isMastered, showMastered = true }) => (
+        <div onClick={onFlip} style={{
+          background: fl ? T.cardFaceBack : color, borderRadius:16, padding:28, minHeight:340, cursor:"pointer",
+          display:"flex", flexDirection:"column", justifyContent: fl ? "flex-start" : "center", alignItems: fl ? "flex-start" : "center",
+          border: fl ? `1px solid ${T.border}` : "none",
+          boxShadow: fl ? `0 8px 32px rgba(0,0,0,${themeName==='dark'?0.4:0.1})` : `0 6px 0 ${color}66, 0 12px 40px rgba(0,0,0,${themeName==='dark'?0.3:0.08})`,
+          transition:"all 0.25s ease", position:"relative",
+        }}>
+          {!fl ? (
+            <>
+              <div style={{ fontSize:22,fontWeight:800,textAlign:"center",color:"#fff",textShadow:"0 2px 4px rgba(0,0,0,0.2)",lineHeight:1.3 }}>{card?.t}</div>
+              <div style={{ marginTop:18,fontSize:11,color:"rgba(255,255,255,0.6)",fontWeight:700,textTransform:"uppercase",letterSpacing:1.5 }}>Tap to reveal</div>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize:13,fontWeight:800,color,marginBottom:10,textTransform:"uppercase",letterSpacing:0.5 }}>{card?.t}</div>
+              <div style={{ fontSize:13,lineHeight:1.75,color:T.textPrimary,whiteSpace:"pre-line",fontWeight:500,opacity:0.9 }}>{card?.c}</div>
+              {showMastered && isMastered && <div style={{ position:"absolute",top:14,right:14,background:"#58CC02",borderRadius:50,width:26,height:26,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#fff",fontWeight:800 }}>&#10003;</div>}
+            </>
+          )}
+        </div>
+      );
+
+      /* ═══════════ QUIZ VIEW ═══════════ */
+      if (view === "quiz") {
+        const item = quizPool[quizIndex];
+        if (!item) { setView("home"); return null; }
+        const sectionMeta = SECTIONS_META.find(s => s.id === item.sectionId);
+        const color = sectionMeta?.color || "#888";
+        const isAnswered = quizSelected !== null;
+        const choices = quizChoices.choices || [];
+
+        return (
+          <div style={{ minHeight:"100vh",background:T.bg,fontFamily:font,color:T.textPrimary,maxWidth:480,margin:"0 auto" }}>
+            <Overlays />
+            <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 20px",borderBottom:`1px solid ${T.border}` }}>
+              <BackBtn onClick={goHome} />
+              <div style={{ display:"flex",alignItems:"center",gap:12 }}>
+                <span style={{ color:T.textMuted,fontSize:11,fontWeight:700 }}>QUIZ</span>
+                <div style={{ background:T.card,borderRadius:10,padding:"6px 12px",border:`1px solid ${T.border}` }}>
+                  <span style={{ color:"#58CC02",fontSize:13,fontWeight:800 }}>{quizScore}/{quizTotal}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ padding:"20px" }}>
+              <div style={{ height:3,width:16,borderRadius:2,background:color,marginBottom:6,display:"inline-block" }} />
+              <span style={{ fontSize:10,fontWeight:700,color,letterSpacing:0.5,marginLeft:8 }}>{sectionMeta?.title?.toUpperCase()}</span>
+
+              <div style={{ background:color,borderRadius:14,padding:"28px 24px",marginTop:12,marginBottom:20 }}>
+                <div style={{ fontSize:20,fontWeight:800,color:"#fff",textAlign:"center",textShadow:"0 1px 3px rgba(0,0,0,0.2)" }}>{item.card.t}</div>
+                <div style={{ marginTop:12,fontSize:11,color:"rgba(255,255,255,0.6)",textAlign:"center",fontWeight:700,textTransform:"uppercase",letterSpacing:1 }}>Select the correct answer</div>
+              </div>
+
+              <div style={{ display:"flex",flexDirection:"column",gap:10 }}>
+                {choices.map((choice, i) => {
+                  const selected = quizSelected === choice;
+                  const isRight = choice === quizChoices.correct;
+                  let bg = T.card, border = T.border, textColor = T.textPrimary;
+                  if (isAnswered) {
+                    if (isRight) { bg = "rgba(88,204,2,0.15)"; border = "#58CC02"; textColor = "#58CC02"; }
+                    else if (selected && !isRight) { bg = "rgba(255,75,75,0.15)"; border = "#FF4B4B"; textColor = "#FF4B4B"; }
+                    else { textColor = T.textMuted; }
+                  }
+                  return (
+                    <button key={i} onClick={() => {
+                      if (isAnswered) return;
+                      setQuizSelected(choice);
+                      setQuizTotal(t => t + 1);
+                      if (choice === quizChoices.correct) { setQuizScore(s => s + 1); playSfx("right"); }
+                      else playSfx("wrong");
+                    }} style={{
+                      padding:"14px 16px",borderRadius:12,border:`1px solid ${border}`,background:bg,
+                      color:textColor,fontSize:13,fontWeight:600,cursor:isAnswered ? "default" : "pointer",
+                      textAlign:"left",fontFamily:font,lineHeight:1.4,
+                      transition:"all 0.2s ease",
+                    }}>
+                      <span style={{ fontWeight:800,marginRight:8,color:T.textMuted }}>{String.fromCharCode(65 + i)}.</span>
+                      {choice.length > 80 ? choice.slice(0, 80) + "..." : choice}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {isAnswered && (
+                <button onClick={() => {
+                  const ni = quizIndex + 1;
+                  if (ni < quizPool.length) {
+                    setQuizIndex(ni);
+                    const ch = generateQuizChoices(quizPool[ni]);
+                    setQuizChoices(ch);
+                    setQuizSelected(null);
+                  } else {
+                    setQuizIndex(0);
+                    const p = buildQuiz(); setQuizPool(p);
+                    const ch = generateQuizChoices(p[0]);
+                    setQuizChoices(ch); setQuizSelected(null);
+                  }
+                  playSfx("nav");
+                }} style={{
+                  width:"100%",padding:"14px",borderRadius:12,border:"none",background:color,color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:font,marginTop:16,
+                }}>Next Question</button>
+              )}
+            </div>
+            <style>{GLOBAL_CSS}</style>
+          </div>
+        );
+      }
+
+      /* ═══════════ REVIEW MISTAKES VIEW ═══════════ */
+      if (view === "review") {
+        const item = mistakePool[mistakeIndex];
+        if (!item || mistakePool.length === 0) return (
+          <div style={{ minHeight:"100vh",background:T.bg,fontFamily:font,color:T.textPrimary,maxWidth:480,margin:"0 auto",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:40 }}>
+            <div style={{ fontSize:16,fontWeight:800,color:T.textPrimary,marginBottom:8 }}>No mistakes to review</div>
+            <div style={{ fontSize:13,color:T.textSecondary,marginBottom:20,textAlign:"center" }}>Study some cards first, then come back to review the ones you haven't mastered yet.</div>
+            <button onClick={() => setView("home")} style={{ padding:"12px 24px",borderRadius:10,border:"none",background:"#58CC02",color:"#fff",fontWeight:800,cursor:"pointer",fontFamily:font }}>Back Home</button>
+            <style>{GLOBAL_CSS}</style>
+          </div>
+        );
+        const sectionMeta = SECTIONS_META.find(s => s.id === item.sectionId);
+        const color = sectionMeta?.color || "#888";
+
+        return (
+          <div ref={swipeRef} style={{ minHeight:"100vh",background:T.bg,fontFamily:font,color:T.textPrimary,maxWidth:480,margin:"0 auto" }}>
+            <Overlays />
+            <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 20px",borderBottom:`1px solid ${T.border}` }}>
+              <BackBtn onClick={goHome} />
+              <div style={{ display:"flex",alignItems:"center",gap:12 }}>
+                <span style={{ color:"#FF4B4B",fontSize:11,fontWeight:700 }}>REVIEW MISTAKES</span>
+                <span style={{ color:T.textSecondary,fontSize:13,fontWeight:700 }}>{mistakeIndex + 1}/{mistakePool.length}</span>
+              </div>
+            </div>
+            <div style={{ padding:"12px 20px 0",display:"flex",alignItems:"center",gap:8 }}>
+              <div style={{ height:3,width:16,borderRadius:2,background:color }} />
+              <span style={{ fontSize:10,fontWeight:700,color,letterSpacing:0.5 }}>{sectionMeta?.title?.toUpperCase()}</span>
+            </div>
+            <div style={{ padding:"16px 20px 100px" }}>
+              <FlashCard card={item.card} color={color} flipped={flipped} onFlip={() => { playSfx("flip"); setFlipped(f => !f); }} showMastered={false} />
+              {flipped && (
+                <div style={{ display:"flex",gap:12,marginTop:16,animation:"slideUp 0.25s ease" }}>
+                  <button onClick={() => { playSfx("nav"); setFlipped(false); if (mistakeIndex < mistakePool.length - 1) setMistakeIndex(i => i + 1); }}
+                    style={{ flex:1,padding:"14px 20px",borderRadius:12,border:`1px solid #FF4B4B`,background:"transparent",color:"#FF4B4B",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:font }}>NEXT</button>
+                  <button onClick={() => { playSfx("gotIt"); markMastered(item.sectionId, item.cardIdx); setFlipped(false); if (mistakeIndex < mistakePool.length - 1) setMistakeIndex(i => i + 1); }}
+                    style={{ flex:1,padding:"14px 20px",borderRadius:12,border:"none",background:"#58CC02",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:font,boxShadow:"0 3px 0 #46A302" }}>MASTERED</button>
+                </div>
+              )}
+            </div>
+            <style>{GLOBAL_CSS}</style>
+          </div>
+        );
+      }
+
+      /* ═══════════ RANDOM VIEW ═══════════ */
       if (view === "random") {
         const item = randomPool[randomIndex];
         if (!item) return null;
         const sectionMeta = SECTIONS_META.find(s => s.id === item.sectionId);
-
+        const color = sectionMeta?.color || "#888";
         return (
-          <div style={{ minHeight:"100vh",background:S.bg,fontFamily:S.font,color:S.textPrimary,maxWidth:480,margin:"0 auto",position:"relative" }}>
-            <CelebrationOverlay /><StreakPopup />
-
-            {/* Header */}
-            <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 20px",borderBottom:`1px solid ${S.border}` }}>
-              <BackButton onClick={() => { setView("home"); setFlipped(false); }} />
+          <div ref={swipeRef} style={{ minHeight:"100vh",background:T.bg,fontFamily:font,color:T.textPrimary,maxWidth:480,margin:"0 auto" }}>
+            <Overlays />
+            <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 20px",borderBottom:`1px solid ${T.border}` }}>
+              <BackBtn onClick={goHome} />
               <div style={{ display:"flex",alignItems:"center",gap:12 }}>
-                <span style={{ color:S.textMuted,fontSize:12,fontWeight:700 }}>RANDOM MODE</span>
-                <div style={{ background:S.card,borderRadius:10,padding:"6px 12px",border:`1px solid ${S.border}` }}>
-                  <span style={{ color:S.textSecondary,fontSize:13,fontWeight:800 }}>{randomCardsStudied} studied</span>
-                </div>
+                <span style={{ color:T.textMuted,fontSize:11,fontWeight:700 }}>RANDOM</span>
+                <span style={{ color:T.textSecondary,fontSize:13,fontWeight:700 }}>{randomIndex + 1} of {randomPool.length}</span>
               </div>
             </div>
-
-            {/* Source tag */}
             <div style={{ padding:"12px 20px 0",display:"flex",alignItems:"center",gap:8 }}>
-              <div style={{ height:3,width:16,borderRadius:2,background:sectionMeta?.color || "#888" }} />
-              <span style={{ fontSize:11,fontWeight:700,color:sectionMeta?.color || "#888",letterSpacing:0.5 }}>
-                {sectionMeta?.title?.toUpperCase()}
-              </span>
+              <div style={{ height:3,width:16,borderRadius:2,background:color }} />
+              <span style={{ fontSize:10,fontWeight:700,color,letterSpacing:0.5 }}>{sectionMeta?.title?.toUpperCase()}</span>
             </div>
-
-            {/* Card */}
             <div style={{ padding:"16px 20px 100px" }}>
-              <div
-                onClick={() => { playSfx("flip"); setFlipped(!flipped); }}
-                style={{
-                  background: flipped ? S.card : (sectionMeta?.color || "#58CC02"),
-                  borderRadius: 16,
-                  padding: 28,
-                  minHeight: 360,
-                  cursor: "pointer",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: flipped ? "flex-start" : "center",
-                  alignItems: flipped ? "flex-start" : "center",
-                  border: flipped ? `1px solid ${S.border}` : "none",
-                  boxShadow: flipped ? "0 8px 32px rgba(0,0,0,0.4)" : `0 6px 0 ${sectionMeta?.color || "#58CC02"}66, 0 12px 40px rgba(0,0,0,0.3)`,
-                  transition: "all 0.25s ease",
-                  position: "relative",
-                }}
-              >
-                {!flipped ? (
-                  <>
-                    <div style={{ fontSize:24,fontWeight:800,textAlign:"center",color:"#fff",textShadow:"0 2px 4px rgba(0,0,0,0.2)",lineHeight:1.3 }}>{item.card.t}</div>
-                    <div style={{ marginTop:20,fontSize:11,color:"rgba(255,255,255,0.6)",fontWeight:700,textTransform:"uppercase",letterSpacing:1.5 }}>Tap to reveal</div>
-                  </>
-                ) : (
-                  <>
-                    <div style={{ fontSize:14,fontWeight:800,color:sectionMeta?.color || "#58CC02",marginBottom:12,textTransform:"uppercase",letterSpacing:0.5 }}>{item.card.t}</div>
-                    <div style={{ fontSize:14,lineHeight:1.75,color:"#C0D8E2",whiteSpace:"pre-line",fontWeight:500 }}>{item.card.c}</div>
-                  </>
-                )}
-              </div>
-
-              {/* Action buttons */}
+              <FlashCard card={item.card} color={color} flipped={flipped} onFlip={() => { playSfx("flip"); setFlipped(f => !f); }} showMastered={false} />
               {flipped && (
                 <div style={{ display:"flex",gap:12,marginTop:16,animation:"slideUp 0.25s ease" }}>
-                  <button onClick={() => {
-                    playSfx("nav"); setFlipped(false);
-                    setRandomIndex(i => (i + 1) % randomPool.length);
-                    setRandomCardsStudied(c => c + 1);
-                  }} style={{
-                    flex:1,padding:"14px 20px",borderRadius:12,border:`1px solid #FF4B4B`,background:"transparent",color:"#FF4B4B",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:S.font,
-                  }}>NEXT</button>
-                  <button onClick={() => {
-                    playSfx("gotIt");
-                    setFlipped(false);
-                    setRandomIndex(i => (i + 1) % randomPool.length);
-                    setRandomCardsStudied(c => c + 1);
-                  }} style={{
-                    flex:1,padding:"14px 20px",borderRadius:12,border:"none",background:"#58CC02",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:S.font,boxShadow:"0 3px 0 #46A302",
-                  }}>GOT IT</button>
+                  <button onClick={() => { playSfx("nav"); setFlipped(false); setRandomIndex(i => (i + 1) % randomPool.length); setRandomCardsStudied(c => c + 1); }}
+                    style={{ flex:1,padding:"14px",borderRadius:12,border:`1px solid #FF4B4B`,background:"transparent",color:"#FF4B4B",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:font }}>NEXT</button>
+                  <button onClick={() => { playSfx("gotIt"); setFlipped(false); setRandomIndex(i => (i + 1) % randomPool.length); setRandomCardsStudied(c => c + 1); }}
+                    style={{ flex:1,padding:"14px",borderRadius:12,border:"none",background:"#58CC02",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:font,boxShadow:"0 3px 0 #46A302" }}>GOT IT</button>
                 </div>
               )}
-
-              {/* Reshuffle */}
-              <div style={{ textAlign:"center",marginTop:16 }}>
-                <button onClick={() => { const p = buildRandomPool(); setRandomPool(p); setRandomIndex(0); setFlipped(false); playSfx("nav"); }} style={{
-                  background:S.card,border:`1px solid ${S.border}`,borderRadius:10,padding:"8px 16px",color:S.textSecondary,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:S.font,
-                }}>Reshuffle All Cards</button>
-              </div>
-
-              <div style={{ textAlign:"center",fontSize:11,color:S.textMuted,fontWeight:600,marginTop:12 }}>
-                Space: flip &middot; G: got it &middot; S/Right: next
+              <div style={{ textAlign:"center",marginTop:14 }}>
+                <button onClick={() => { setRandomPool(shuffle([...allCards])); setRandomIndex(0); setFlipped(false); playSfx("nav"); }} style={{ background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:"8px 16px",color:T.textSecondary,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:font }}>Reshuffle</button>
               </div>
             </div>
-
-            <style>{`
-              @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap');
-              @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
-              @keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0 } 50% { transform: scale(1.05) } 100% { transform: scale(1); opacity: 1 } }
-              @keyframes slideUp { from { transform: translateY(16px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
-              @keyframes slideDown { from { transform: translateX(-50%) translateY(-40px); opacity: 0 } to { transform: translateX(-50%) translateY(0); opacity: 1 } }
-            `}</style>
+            <style>{GLOBAL_CSS}</style>
           </div>
         );
       }
 
-      /* ═══════════════════ STUDY VIEW ═══════════════════ */
+      /* ═══════════ STUDY VIEW ═══════════ */
       if (view === "study" && selectedSection && cardData) {
         const cards = cardData[selectedSection.id] || [];
         const displayOrder = cardOrder.length > 0 ? cardOrder : cards.map((_, i) => i);
-        const originalIdx = displayOrder[currentCard] ?? currentCard;
-        const card = cards[originalIdx];
-        const sectionMeta = SECTIONS_META.find(s => s.id === selectedSection.id);
-        const isMastered = mastered[`${selectedSection.id}-${originalIdx}`];
-        const progressPct = displayOrder.length > 0 ? ((currentCard + 1) / displayOrder.length) * 100 : 0;
+        const oi = displayOrder[currentCard] ?? currentCard;
+        const card = cards[oi];
+        const color = selectedSection.color;
+        const im = mastered[`${selectedSection.id}-${oi}`];
+        const pPct = displayOrder.length > 0 ? ((currentCard + 1) / displayOrder.length) * 100 : 0;
 
         return (
-          <div style={{ minHeight:"100vh",background:S.bg,fontFamily:S.font,color:S.textPrimary,maxWidth:480,margin:"0 auto",position:"relative" }}>
-            <CelebrationOverlay /><StreakPopup />
-
-            {/* Header */}
-            <div style={{ display:"flex",alignItems:"center",padding:"16px 20px",borderBottom:`1px solid ${S.border}` }}>
-              <BackButton onClick={() => { setView("home"); setCurrentCard(0); setFlipped(false); }} />
-              <div style={{ flex:1,margin:"0 16px" }}>
-                <div style={{ height:4,background:S.card,borderRadius:4,overflow:"hidden" }}>
-                  <div style={{ height:"100%",width:`${progressPct}%`,background:sectionMeta?.color || "#58CC02",borderRadius:4,transition:"width 0.4s ease" }} />
+          <div ref={swipeRef} style={{ minHeight:"100vh",background:T.bg,fontFamily:font,color:T.textPrimary,maxWidth:480,margin:"0 auto" }}>
+            <Overlays />
+            {/* Reset confirm */}
+            {showResetConfirm && (
+              <div style={{ position:"fixed",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:T.overlay,zIndex:999,backdropFilter:"blur(8px)" }}>
+                <div style={{ background:T.card,borderRadius:16,padding:"28px 32px",border:`1px solid ${T.border}`,textAlign:"center" }}>
+                  <div style={{ fontSize:15,fontWeight:800,color:T.textPrimary,marginBottom:8 }}>Reset {selectedSection.title}?</div>
+                  <div style={{ fontSize:12,color:T.textSecondary,marginBottom:20 }}>All mastery progress for this section will be cleared.</div>
+                  <div style={{ display:"flex",gap:10 }}>
+                    <button onClick={() => setShowResetConfirm(false)} style={{ flex:1,padding:"10px",borderRadius:10,border:`1px solid ${T.border}`,background:"transparent",color:T.textSecondary,fontWeight:700,cursor:"pointer",fontFamily:font }}>Cancel</button>
+                    <button onClick={() => resetSection(selectedSection.id)} style={{ flex:1,padding:"10px",borderRadius:10,border:"none",background:"#FF4B4B",color:"#fff",fontWeight:700,cursor:"pointer",fontFamily:font }}>Reset</button>
+                  </div>
                 </div>
               </div>
-              <span style={{ color:S.textSecondary,fontSize:13,fontWeight:700 }}>{currentCard + 1}/{displayOrder.length}</span>
-            </div>
+            )}
 
-            {/* Toggles */}
-            <div style={{ display:"flex",gap:8,padding:"10px 20px",justifyContent:"flex-end" }}>
-              <button onClick={() => {
-                const next = !shuffled; setShuffled(next);
-                const order = buildCardOrder(selectedSection.id, cards, next, unmasteredOnly, mastered);
-                playSfx("nav"); setCardOrder(order); setCurrentCard(0); setFlipped(false);
-              }} style={{
-                padding:"5px 12px",borderRadius:8,fontSize:11,fontWeight:800,fontFamily:S.font,cursor:"pointer",
-                border:`1px solid ${shuffled ? "#FFC800" : S.border}`,background:shuffled ? "rgba(255,200,0,0.1)" : S.card,color:shuffled ? "#FFC800" : S.textSecondary,
-              }}>Shuffle</button>
-              <button onClick={() => {
-                const next = !unmasteredOnly; setUnmasteredOnly(next);
-                const order = buildCardOrder(selectedSection.id, cards, shuffled, next, mastered);
-                playSfx("nav"); setCardOrder(order); setCurrentCard(0); setFlipped(false);
-              }} style={{
-                padding:"5px 12px",borderRadius:8,fontSize:11,fontWeight:800,fontFamily:S.font,cursor:"pointer",
-                border:`1px solid ${unmasteredOnly ? "#1CB0F6" : S.border}`,background:unmasteredOnly ? "rgba(28,176,246,0.1)" : S.card,color:unmasteredOnly ? "#1CB0F6" : S.textSecondary,
-              }}>Unmastered</button>
-            </div>
-
-            {/* Card */}
-            <div style={{ padding:"16px 20px 100px" }}>
-              <div
-                onClick={() => { playSfx("flip"); setFlipped(!flipped); if (!flipped) markStudied(selectedSection.id, originalIdx); }}
-                style={{
-                  background: flipped ? S.card : (sectionMeta?.color || "#58CC02"),
-                  borderRadius: 16, padding: 28, minHeight: 360, cursor: "pointer",
-                  display: "flex", flexDirection: "column",
-                  justifyContent: flipped ? "flex-start" : "center",
-                  alignItems: flipped ? "flex-start" : "center",
-                  border: flipped ? `1px solid ${S.border}` : "none",
-                  boxShadow: flipped ? "0 8px 32px rgba(0,0,0,0.4)" : `0 6px 0 ${sectionMeta?.color || "#58CC02"}66, 0 12px 40px rgba(0,0,0,0.3)`,
-                  transition: "all 0.25s ease", position: "relative",
-                }}
-              >
-                {!flipped ? (
-                  <>
-                    <div style={{ fontSize:24,fontWeight:800,textAlign:"center",color:"#fff",textShadow:"0 2px 4px rgba(0,0,0,0.2)",lineHeight:1.3 }}>{card?.t}</div>
-                    <div style={{ marginTop:20,fontSize:11,color:"rgba(255,255,255,0.6)",fontWeight:700,textTransform:"uppercase",letterSpacing:1.5 }}>Tap to reveal</div>
-                  </>
-                ) : (
-                  <>
-                    <div style={{ fontSize:14,fontWeight:800,color:sectionMeta?.color || "#58CC02",marginBottom:12,textTransform:"uppercase",letterSpacing:0.5 }}>{card?.t}</div>
-                    <div style={{ fontSize:14,lineHeight:1.75,color:"#C0D8E2",whiteSpace:"pre-line",fontWeight:500 }}>{card?.c}</div>
-                    {isMastered && <div style={{ position:"absolute",top:16,right:16,background:"#58CC02",borderRadius:50,width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:"#fff",fontWeight:800 }}>&#10003;</div>}
-                  </>
-                )}
+            <div style={{ display:"flex",alignItems:"center",padding:"16px 20px",borderBottom:`1px solid ${T.border}` }}>
+              <BackBtn onClick={goHome} />
+              <div style={{ flex:1,margin:"0 12px" }}>
+                <div style={{ height:4,background:T.card,borderRadius:4,overflow:"hidden" }}>
+                  <div style={{ height:"100%",width:`${pPct}%`,background:color,borderRadius:4,transition:"width 0.4s ease" }} />
+                </div>
               </div>
+              <span style={{ color:T.textSecondary,fontSize:13,fontWeight:700 }}>{currentCard + 1}/{displayOrder.length}</span>
+            </div>
 
-              {flipped && (
+            <div style={{ display:"flex",gap:8,padding:"10px 20px",justifyContent:"space-between",alignItems:"center" }}>
+              <button onClick={() => setShowResetConfirm(true)} style={{ padding:"5px 10px",borderRadius:8,fontSize:10,fontWeight:700,fontFamily:font,cursor:"pointer",border:`1px solid ${T.border}`,background:T.card,color:"#FF4B4B" }}>Reset</button>
+              <div style={{ display:"flex",gap:6 }}>
+                <button onClick={() => { const n = !shuffledMode; setShuffledMode(n); setCardOrder(buildCardOrder(selectedSection.id, cards, n, unmasteredOnly, mastered)); playSfx("nav"); setCurrentCard(0); setFlipped(false); }}
+                  style={{ padding:"5px 12px",borderRadius:8,fontSize:11,fontWeight:800,fontFamily:font,cursor:"pointer",border:`1px solid ${shuffledMode ? "#FFC800" : T.border}`,background:shuffledMode ? "rgba(255,200,0,0.1)" : T.card,color:shuffledMode ? "#FFC800" : T.textSecondary }}>Shuffle</button>
+                <button onClick={() => { const n = !unmasteredOnly; setUnmasteredOnly(n); setCardOrder(buildCardOrder(selectedSection.id, cards, shuffledMode, n, mastered)); playSfx("nav"); setCurrentCard(0); setFlipped(false); }}
+                  style={{ padding:"5px 12px",borderRadius:8,fontSize:11,fontWeight:800,fontFamily:font,cursor:"pointer",border:`1px solid ${unmasteredOnly ? "#1CB0F6" : T.border}`,background:unmasteredOnly ? "rgba(28,176,246,0.1)" : T.card,color:unmasteredOnly ? "#1CB0F6" : T.textSecondary }}>Unmastered</button>
+              </div>
+            </div>
+
+            <div style={{ padding:"12px 20px 100px" }}>
+              <FlashCard card={card} color={color} flipped={flipped} onFlip={() => { playSfx("flip"); setFlipped(!flipped); if (!flipped) markStudied(selectedSection.id, oi); }} isMastered={im} />
+              {flipped ? (
                 <div style={{ display:"flex",gap:12,marginTop:16,animation:"slideUp 0.25s ease" }}>
-                  <button onClick={(e) => { e.stopPropagation(); playSfx("nav"); setFlipped(false); if (currentCard < displayOrder.length - 1) setCurrentCard(currentCard + 1); }}
-                    style={{ flex:1,padding:"14px 20px",borderRadius:12,border:`1px solid #FF4B4B`,background:"transparent",color:"#FF4B4B",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:S.font }}>STUDY AGAIN</button>
-                  <button onClick={(e) => { e.stopPropagation(); playSfx("gotIt"); markMastered(selectedSection.id, originalIdx); setFlipped(false); if (currentCard < displayOrder.length - 1) setCurrentCard(currentCard + 1); }}
-                    style={{ flex:1,padding:"14px 20px",borderRadius:12,border:"none",background:"#58CC02",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:S.font,boxShadow:"0 3px 0 #46A302" }}>GOT IT</button>
+                  <button onClick={() => { playSfx("nav"); setFlipped(false); if (currentCard < displayOrder.length - 1) setCurrentCard(c => c + 1); }}
+                    style={{ flex:1,padding:"14px",borderRadius:12,border:`1px solid #FF4B4B`,background:"transparent",color:"#FF4B4B",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:font }}>STUDY AGAIN</button>
+                  <button onClick={() => { playSfx("gotIt"); markMastered(selectedSection.id, oi); setFlipped(false); if (currentCard < displayOrder.length - 1) setCurrentCard(c => c + 1); }}
+                    style={{ flex:1,padding:"14px",borderRadius:12,border:"none",background:"#58CC02",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:font,boxShadow:"0 3px 0 #46A302" }}>GOT IT</button>
                 </div>
-              )}
-
-              {!flipped && (
+              ) : (
                 <div style={{ display:"flex",justifyContent:"space-between",marginTop:16 }}>
-                  <button disabled={currentCard === 0} onClick={() => { playSfx("nav"); setCurrentCard(currentCard - 1); setFlipped(false); }}
-                    style={{ padding:"12px 24px",borderRadius:12,border:`1px solid ${S.border}`,background:S.card,color:currentCard === 0 ? S.textMuted : S.textSecondary,fontSize:14,fontWeight:700,cursor:currentCard === 0 ? "default" : "pointer",fontFamily:S.font }}>Prev</button>
-                  <button disabled={currentCard === displayOrder.length - 1} onClick={() => { playSfx("nav"); setCurrentCard(currentCard + 1); setFlipped(false); }}
-                    style={{ padding:"12px 24px",borderRadius:12,border:`1px solid ${S.border}`,background:S.card,color:currentCard === displayOrder.length - 1 ? S.textMuted : S.textSecondary,fontSize:14,fontWeight:700,cursor:currentCard === displayOrder.length - 1 ? "default" : "pointer",fontFamily:S.font }}>Next</button>
+                  <button disabled={currentCard === 0} onClick={() => { playSfx("nav"); setCurrentCard(c => c - 1); setFlipped(false); }}
+                    style={{ padding:"12px 24px",borderRadius:12,border:`1px solid ${T.border}`,background:T.card,color:currentCard === 0 ? T.textMuted : T.textSecondary,fontSize:14,fontWeight:700,cursor:currentCard === 0 ? "default" : "pointer",fontFamily:font }}>Prev</button>
+                  <button disabled={currentCard === displayOrder.length - 1} onClick={() => { playSfx("nav"); setCurrentCard(c => c + 1); setFlipped(false); }}
+                    style={{ padding:"12px 24px",borderRadius:12,border:`1px solid ${T.border}`,background:T.card,color:currentCard === displayOrder.length - 1 ? T.textMuted : T.textSecondary,fontSize:14,fontWeight:700,cursor:currentCard === displayOrder.length - 1 ? "default" : "pointer",fontFamily:font }}>Next</button>
                 </div>
               )}
-
-              <div style={{ textAlign:"center",fontSize:11,color:S.textMuted,fontWeight:600,marginTop:12 }}>
-                Space: flip &middot; G: got it &middot; S: skip &middot; &#8592; &#8594;: navigate
-              </div>
+              <div style={{ textAlign:"center",fontSize:10,color:T.textMuted,fontWeight:600,marginTop:10 }}>Swipe or use Space / G / S / Arrows</div>
             </div>
-
-            <style>{`
-              @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap');
-              @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
-              @keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0 } 50% { transform: scale(1.05) } 100% { transform: scale(1); opacity: 1 } }
-              @keyframes slideUp { from { transform: translateY(16px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
-              @keyframes slideDown { from { transform: translateX(-50%) translateY(-40px); opacity: 0 } to { transform: translateX(-50%) translateY(0); opacity: 1 } }
-            `}</style>
+            <style>{GLOBAL_CSS}</style>
           </div>
         );
       }
 
-      /* ═══════════════════ HOME VIEW ═══════════════════ */
+      /* ═══════════ HOME VIEW ═══════════ */
+      const mistakeCount = useMemo(() => {
+        let c = 0;
+        Object.keys(cardData).forEach(sid => { const st = progress[sid]?.cards || {};
+          cardData[sid].forEach((_, i) => { if (st[i] && !mastered[`${sid}-${i}`]) c++; });
+        });
+        return c;
+      }, [cardData, progress, mastered]);
+
       return (
-        <div style={{ minHeight:"100vh",background:S.bg,fontFamily:S.font,color:S.textPrimary,maxWidth:480,margin:"0 auto" }}>
-
+        <div style={{ minHeight:"100vh",background:T.bg,fontFamily:font,color:T.textPrimary,maxWidth:480,margin:"0 auto" }}>
           {/* Top bar */}
-          <div style={{ padding:"24px 20px 0",display:"flex",alignItems:"center",justifyContent:"space-between" }}>
+          <div style={{ padding:"20px 20px 0",display:"flex",alignItems:"center",justifyContent:"space-between" }}>
             <div>
-              <div style={{ fontSize:22,fontWeight:900,letterSpacing:-0.3,color:S.textPrimary }}>Sec+ Cards</div>
-              <div style={{ color:S.textMuted,fontSize:12,fontWeight:600,marginTop:2 }}>SY0-701 Study Deck</div>
+              <div style={{ fontSize:20,fontWeight:900,letterSpacing:-0.3,color:T.textPrimary }}>Sec+ Cards</div>
+              <div style={{ color:T.textMuted,fontSize:11,fontWeight:600,marginTop:2 }}>SY0-701 Study Deck</div>
             </div>
-            <div style={{ display:"flex",alignItems:"center",gap:10 }}>
-              <button onClick={() => setSoundEnabled(v => !v)} style={{
-                background:S.card,border:`1px solid ${S.border}`,borderRadius:10,padding:"8px 10px",cursor:"pointer",color:soundEnabled ? "#58CC02" : S.textMuted,fontSize:16,display:"flex",alignItems:"center",
-              }}>{soundEnabled ? "\u{1F50A}" : "\u{1F507}"}</button>
-              <div style={{ background:dailyStreak > 0 ? "rgba(255,200,0,0.08)" : S.card,border:`1px solid ${dailyStreak > 0 ? "rgba(255,200,0,0.2)" : S.border}`,borderRadius:10,padding:"8px 14px",display:"flex",alignItems:"center",gap:8 }}>
-                <span style={{ fontWeight:900,color:dailyStreak > 0 ? "#FFC800" : S.textMuted,fontSize:16 }}>{dailyStreak}</span>
-                <span style={{ color:S.textMuted,fontSize:10,fontWeight:700 }}>{dailyStreak === 1 ? "day" : "days"}</span>
+            <div style={{ display:"flex",alignItems:"center",gap:8 }}>
+              <button onClick={() => setSoundEnabled(v => !v)} style={{ background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"6px 8px",cursor:"pointer",color:soundEnabled ? "#58CC02" : T.textMuted,fontSize:14,display:"flex",alignItems:"center" }}>{soundEnabled ? "\u{1F50A}" : "\u{1F507}"}</button>
+              <button onClick={() => setThemeName(t => t === "dark" ? "light" : "dark")} style={{ background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"6px 8px",cursor:"pointer",color:T.textSecondary,fontSize:14,display:"flex",alignItems:"center" }}>{themeName === "dark" ? "\u2600" : "\u263D"}</button>
+              <div style={{ background:dailyStreak > 0 ? "rgba(255,200,0,0.08)" : T.card,border:`1px solid ${dailyStreak > 0 ? "rgba(255,200,0,0.2)" : T.border}`,borderRadius:8,padding:"6px 12px",display:"flex",alignItems:"center",gap:6 }}>
+                <span style={{ fontWeight:900,color:dailyStreak > 0 ? "#FFC800" : T.textMuted,fontSize:14 }}>{dailyStreak}</span>
+                <span style={{ color:T.textMuted,fontSize:9,fontWeight:700 }}>day{dailyStreak !== 1 ? "s" : ""}</span>
               </div>
             </div>
           </div>
 
-          {/* Streak banner */}
-          {!todayCompleted && (
-            <div style={{ margin:"14px 20px 0",padding:"12px 16px",borderRadius:10,background:S.card,border:`1px solid ${S.border}`,display:"flex",alignItems:"center",gap:10 }}>
-              <div style={{ width:6,height:32,borderRadius:3,background:dailyStreak > 0 ? "#FFC800" : S.textMuted,flexShrink:0 }} />
-              <div style={{ fontSize:12,fontWeight:600,color:S.textSecondary }}>
-                {dailyStreak > 0 ? `Complete a deck to keep your ${dailyStreak}-day streak alive` : "Complete all cards in any deck to start a streak"}
-              </div>
-            </div>
-          )}
-          {todayCompleted && dailyStreak > 0 && (
-            <div style={{ margin:"14px 20px 0",padding:"12px 16px",borderRadius:10,background:"rgba(88,204,2,0.06)",border:"1px solid rgba(88,204,2,0.15)",display:"flex",alignItems:"center",gap:10 }}>
-              <div style={{ width:6,height:32,borderRadius:3,background:"#58CC02",flexShrink:0 }} />
-              <div style={{ fontSize:12,fontWeight:600,color:"#58CC02" }}>Today's streak secured. Come back tomorrow.</div>
-            </div>
-          )}
-
-          {/* Progress */}
+          {/* Domain Progress Rings */}
           <div style={{ padding:"16px 20px" }}>
-            <div style={{ background:S.card,borderRadius:12,padding:16,border:`1px solid ${S.border}` }}>
-              <div style={{ display:"flex",justifyContent:"space-between",marginBottom:8 }}>
-                <span style={{ fontSize:12,fontWeight:700,color:S.textSecondary }}>Overall Progress</span>
-                <span style={{ fontSize:12,fontWeight:800,color:"#58CC02" }}>{totalCards > 0 ? Math.round((totalMastered / totalCards) * 100) : 0}%</span>
-              </div>
-              <div style={{ height:6,background:"rgba(0,0,0,0.3)",borderRadius:3,overflow:"hidden" }}>
-                <div style={{ height:"100%",width:`${totalCards > 0 ? (totalMastered / totalCards) * 100 : 0}%`,background:"#58CC02",borderRadius:3,transition:"width 0.5s ease" }} />
-              </div>
-              <div style={{ display:"flex",justifyContent:"space-between",marginTop:8,fontSize:11,color:S.textMuted,fontWeight:600 }}>
-                <span>{totalMastered} of {totalCards} cards</span>
-                <span>19 topics</span>
+            <div style={{ background:T.card,borderRadius:14,padding:"16px 12px",border:`1px solid ${T.border}`,display:"flex",alignItems:"center",justifyContent:"space-between" }}>
+              {DOMAINS.map(d => {
+                const s = domainStats[d.label];
+                const pct = s.total > 0 ? Math.round((s.mastered / s.total) * 100) : 0;
+                return <ProgressRing key={d.key} pct={pct} color={d.color} size={50} stroke={4} label={d.short.split(":")[0]} theme={T} />;
+              })}
+              <div style={{ display:"flex",flexDirection:"column",alignItems:"center",gap:2 }}>
+                <div style={{ fontSize:22,fontWeight:900,color:T.textPrimary }}>{totalCards > 0 ? Math.round((totalMastered / totalCards) * 100) : 0}%</div>
+                <div style={{ fontSize:9,fontWeight:700,color:T.textMuted }}>TOTAL</div>
               </div>
             </div>
           </div>
 
-          {/* ── RANDOM MODE BUTTON ── */}
-          <div style={{ padding:"0 20px 12px" }}>
-            <button onClick={() => {
-              const pool = buildRandomPool();
-              setRandomPool(pool); setRandomIndex(0); setRandomCardsStudied(0); setFlipped(false);
-              playSfx("nav"); setView("random");
-            }} style={{
-              width:"100%",padding:"16px 20px",borderRadius:12,cursor:"pointer",fontFamily:S.font,
-              background:"linear-gradient(135deg, #1A2830 0%, #141E23 100%)",
-              border:"1px solid rgba(255,200,0,0.2)",
-              display:"flex",alignItems:"center",justifyContent:"space-between",
-            }}>
-              <div style={{ display:"flex",alignItems:"center",gap:12 }}>
-                <div style={{ width:42,height:42,borderRadius:10,background:"rgba(255,200,0,0.1)",display:"flex",alignItems:"center",justifyContent:"center" }}>
-                  <span style={{ fontSize:14,fontWeight:900,color:"#FFC800" }}>?</span>
-                </div>
-                <div style={{ textAlign:"left" }}>
-                  <div style={{ fontSize:15,fontWeight:800,color:S.textPrimary }}>Random Mode</div>
-                  <div style={{ fontSize:11,fontWeight:600,color:S.textSecondary }}>Shuffled cards from all {totalCards} cards across every topic</div>
-                </div>
-              </div>
-              <span style={{ color:S.textMuted,fontSize:18 }}>&#8594;</span>
+          {/* Mode buttons */}
+          <div style={{ padding:"0 20px",display:"flex",gap:8,marginBottom:12 }}>
+            <button onClick={() => { setRandomPool(shuffle([...allCards])); setRandomIndex(0); setRandomCardsStudied(0); setFlipped(false); startSession(); playSfx("nav"); setView("random"); }}
+              style={{ flex:1,padding:"14px 12px",borderRadius:12,cursor:"pointer",fontFamily:font,background:T.card,border:`1px solid rgba(255,200,0,0.2)`,display:"flex",alignItems:"center",gap:10 }}>
+              <div style={{ width:36,height:36,borderRadius:8,background:"rgba(255,200,0,0.1)",display:"flex",alignItems:"center",justifyContent:"center" }}>
+                <span style={{ fontSize:13,fontWeight:900,color:"#FFC800" }}>?</span></div>
+              <div style={{ textAlign:"left" }}><div style={{ fontSize:13,fontWeight:800,color:T.textPrimary }}>Random</div><div style={{ fontSize:10,fontWeight:600,color:T.textSecondary }}>{totalCards} cards</div></div>
+            </button>
+            <button onClick={() => { const p = buildMistakePool(); setMistakePool(p); setMistakeIndex(0); setFlipped(false); startSession(); playSfx("nav"); setView("review"); }}
+              style={{ flex:1,padding:"14px 12px",borderRadius:12,cursor:"pointer",fontFamily:font,background:T.card,border:`1px solid rgba(255,75,75,0.2)`,display:"flex",alignItems:"center",gap:10 }}>
+              <div style={{ width:36,height:36,borderRadius:8,background:"rgba(255,75,75,0.1)",display:"flex",alignItems:"center",justifyContent:"center" }}>
+                <span style={{ fontSize:13,fontWeight:900,color:"#FF4B4B" }}>!</span></div>
+              <div style={{ textAlign:"left" }}><div style={{ fontSize:13,fontWeight:800,color:T.textPrimary }}>Review</div><div style={{ fontSize:10,fontWeight:600,color:T.textSecondary }}>{mistakeCount} to review</div></div>
+            </button>
+            <button onClick={() => { const p = buildQuiz(); setQuizPool(p); setQuizIndex(0); setQuizScore(0); setQuizTotal(0); setQuizSelected(null); const ch = generateQuizChoices(p[0]); setQuizChoices(ch); startSession(); playSfx("nav"); setView("quiz"); }}
+              style={{ flex:1,padding:"14px 12px",borderRadius:12,cursor:"pointer",fontFamily:font,background:T.card,border:`1px solid rgba(28,176,246,0.2)`,display:"flex",alignItems:"center",gap:10 }}>
+              <div style={{ width:36,height:36,borderRadius:8,background:"rgba(28,176,246,0.1)",display:"flex",alignItems:"center",justifyContent:"center" }}>
+                <span style={{ fontSize:13,fontWeight:900,color:"#1CB0F6" }}>Q</span></div>
+              <div style={{ textAlign:"left" }}><div style={{ fontSize:13,fontWeight:800,color:T.textPrimary }}>Quiz</div><div style={{ fontSize:10,fontWeight:600,color:T.textSecondary }}>4-choice</div></div>
             </button>
           </div>
 
           {/* Search */}
           <div style={{ padding:"0 20px 10px" }}>
-            <input type="text" placeholder="Search topics..." value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); setSelectedDomain(null); }}
-              style={{ width:"100%",padding:"11px 16px",borderRadius:10,border:`1px solid ${S.border}`,background:S.card,color:S.textPrimary,fontSize:13,fontWeight:600,outline:"none",boxSizing:"border-box",fontFamily:S.font }} />
+            <input type="text" placeholder="Search topics..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ width:"100%",padding:"10px 14px",borderRadius:10,border:`1px solid ${T.border}`,background:T.card,color:T.textPrimary,fontSize:12,fontWeight:600,outline:"none",fontFamily:font }} />
           </div>
 
-          {/* Domain filters */}
-          <div style={{ display:"flex",gap:6,padding:"0 20px 14px",overflowX:"auto",whiteSpace:"nowrap" }}>
-            <button onClick={() => { setSelectedDomain(null); setSearchQuery(""); }} style={{
-              padding:"6px 14px",borderRadius:8,cursor:"pointer",flexShrink:0,fontFamily:S.font,fontSize:11,fontWeight:800,
-              border:`1px solid ${!selectedDomain ? "#58CC02" : S.border}`,background:!selectedDomain ? "rgba(88,204,2,0.1)" : S.card,color:!selectedDomain ? "#58CC02" : S.textSecondary,
-            }}>All</button>
-            {Object.keys(domains).map(domain => (
-              <button key={domain} onClick={() => { setSelectedDomain(domain === selectedDomain ? null : domain); setSearchQuery(""); }} style={{
-                padding:"6px 14px",borderRadius:8,cursor:"pointer",flexShrink:0,fontFamily:S.font,fontSize:11,fontWeight:800,
-                border:`1px solid ${selectedDomain === domain ? DOMAIN_COLORS[domain] : S.border}`,
-                background:selectedDomain === domain ? `${DOMAIN_COLORS[domain]}15` : S.card,
-                color:selectedDomain === domain ? DOMAIN_COLORS[domain] : S.textSecondary,
-              }}>{DOMAIN_SHORT[domain] || domain}</button>
-            ))}
-          </div>
-
-          {/* Section cards — NO EMOJIS */}
+          {/* Domain-grouped sections */}
           <div style={{ padding:"0 20px 40px" }}>
-            {filteredSections.map((section, i) => {
-              const sectionCards = cardData?.[section.id] || [];
-              const masteredCount = sectionCards.filter((_, idx) => mastered[`${section.id}-${idx}`]).length;
-              const pct = sectionCards.length > 0 ? Math.round((masteredCount / sectionCards.length) * 100) : 0;
-              const isComplete = pct === 100;
+            {DOMAINS.map(domain => {
+              const sections = SECTIONS_META.filter(s => s.domain === domain.label);
+              const filtered = searchQuery ? sections.filter(s => s.title.toLowerCase().includes(searchQuery.toLowerCase())) : sections;
+              if (filtered.length === 0) return null;
+              const collapsed = collapsedDomains[domain.key];
+              const ds = domainStats[domain.label];
+              const dPct = ds.total > 0 ? Math.round((ds.mastered / ds.total) * 100) : 0;
 
               return (
-                <div key={section.id} onClick={() => {
-                  const sc = cardData?.[section.id] || [];
-                  const order = buildCardOrder(section.id, sc, shuffled, unmasteredOnly, mastered);
-                  playSfx("nav"); setCardOrder(order); setSelectedSection(section); setCurrentCard(0); setFlipped(false); setView("study");
-                }} style={{
-                  background:S.card,borderRadius:12,padding:"16px 18px",marginBottom:10,cursor:"pointer",
-                  borderLeft:`3px solid ${section.color}`,transition:"background 0.15s ease",
-                  border:`1px solid ${S.border}`,borderLeftWidth:3,borderLeftColor:section.color,
-                  animation: `slideUp 0.3s ease ${i * 0.025}s both`,
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = S.cardHover}
-                onMouseLeave={e => e.currentTarget.style.background = S.card}
-                >
-                  <div style={{ display:"flex",alignItems:"center",gap:14 }}>
-                    {/* Color dot instead of emoji */}
-                    <div style={{
-                      width:42,height:42,borderRadius:10,flexShrink:0,
-                      background:`${section.color}12`,border:`1px solid ${section.color}30`,
-                      display:"flex",alignItems:"center",justifyContent:"center",
-                    }}>
-                      {isComplete
-                        ? <span style={{ color:"#58CC02",fontSize:16,fontWeight:900 }}>&#10003;</span>
-                        : <div style={{ width:10,height:10,borderRadius:3,background:section.color,opacity:0.7 }} />
-                      }
+                <div key={domain.key} style={{ marginBottom:8 }}>
+                  <button onClick={() => setCollapsedDomains(p => ({ ...p, [domain.key]: !p[domain.key] }))}
+                    style={{ width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 0",border:"none",background:"transparent",cursor:"pointer",fontFamily:font }}>
+                    <div style={{ display:"flex",alignItems:"center",gap:8 }}>
+                      <div style={{ width:4,height:20,borderRadius:2,background:domain.color }} />
+                      <span style={{ fontSize:12,fontWeight:800,color:domain.color }}>{domain.short}</span>
+                      <span style={{ fontSize:10,fontWeight:600,color:T.textMuted }}>{ds.mastered}/{ds.total}</span>
                     </div>
-                    <div style={{ flex:1,minWidth:0 }}>
-                      <div style={{ fontSize:14,fontWeight:800,marginBottom:2,color:S.textPrimary }}>{section.title}</div>
-                      <div style={{ fontSize:10,color:S.textMuted,fontWeight:700,marginBottom:6 }}>
-                        {section.domain} &middot; {sectionCards.length} cards
-                      </div>
-                      <div style={{ height:4,background:"rgba(0,0,0,0.3)",borderRadius:2,overflow:"hidden" }}>
-                        <div style={{ height:"100%",width:`${pct}%`,background:section.color,borderRadius:2,transition:"width 0.5s ease" }} />
-                      </div>
+                    <div style={{ display:"flex",alignItems:"center",gap:8 }}>
+                      <span style={{ fontSize:11,fontWeight:800,color:dPct > 0 ? domain.color : T.textMuted }}>{dPct}%</span>
+                      <span style={{ fontSize:12,color:T.textMuted,transform: collapsed ? "rotate(-90deg)" : "rotate(0deg)",transition:"transform 0.2s ease" }}>&#9660;</span>
                     </div>
-                    <div style={{ fontSize:12,fontWeight:800,color:pct > 0 ? section.color : S.textMuted,flexShrink:0 }}>{pct}%</div>
-                  </div>
+                  </button>
+
+                  {!collapsed && filtered.map((section, i) => {
+                    const sc = cardData?.[section.id] || [];
+                    const mc = sc.filter((_, idx) => mastered[`${section.id}-${idx}`]).length;
+                    const pct = sc.length > 0 ? Math.round((mc / sc.length) * 100) : 0;
+                    const isComplete = pct === 100;
+
+                    return (
+                      <div key={section.id} onClick={() => {
+                        const order = buildCardOrder(section.id, sc, shuffledMode, unmasteredOnly, mastered);
+                        playSfx("nav"); setCardOrder(order); setSelectedSection(section); setCurrentCard(0); setFlipped(false); startSession(); setView("study");
+                      }} style={{
+                        background:T.card,borderRadius:10,padding:"14px 16px",marginBottom:8,cursor:"pointer",
+                        border:`1px solid ${T.border}`,borderLeft:`3px solid ${domain.color}`,
+                        transition:"background 0.15s ease", animation:`slideUp 0.2s ease ${i * 0.02}s both`,
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = T.cardHover}
+                      onMouseLeave={e => e.currentTarget.style.background = T.card}>
+                        <div style={{ display:"flex",alignItems:"center",gap:12 }}>
+                          <div style={{ width:36,height:36,borderRadius:8,flexShrink:0,background:`${domain.color}12`,border:`1px solid ${domain.color}30`,display:"flex",alignItems:"center",justifyContent:"center" }}>
+                            {isComplete ? <span style={{ color:"#58CC02",fontSize:14,fontWeight:900 }}>&#10003;</span>
+                              : <div style={{ width:8,height:8,borderRadius:2,background:domain.color,opacity:0.7 }} />}
+                          </div>
+                          <div style={{ flex:1,minWidth:0 }}>
+                            <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4 }}>
+                              <div style={{ fontSize:13,fontWeight:800,color:T.textPrimary }}>{section.title}</div>
+                              <span style={{ fontSize:11,fontWeight:800,color:mc > 0 ? domain.color : T.textMuted,flexShrink:0,marginLeft:8 }}>{mc}/{sc.length}</span>
+                            </div>
+                            <div style={{ height:3,background:`${T.textMuted}33`,borderRadius:2,overflow:"hidden" }}>
+                              <div style={{ height:"100%",width:`${pct}%`,background:domain.color,borderRadius:2,transition:"width 0.5s ease" }} />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })}
           </div>
-
-          <style>{`
-            @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap');
-            @keyframes slideUp { from { transform: translateY(16px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
-            * { -webkit-tap-highlight-color: transparent; }
-            ::-webkit-scrollbar { display: none; }
-          `}</style>
+          <style>{GLOBAL_CSS}</style>
         </div>
       );
     }
 
-    const root = ReactDOM.createRoot(document.getElementById("root"));
-    root.render(React.createElement(SecurityPlusApp));
+    ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
   </script>
 
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./sw.js").then(
-          (reg) => console.log("SW registered:", reg.scope),
-          (err) => console.log("SW registration failed:", err)
-        );
+        navigator.serviceWorker.register("./sw.js").then(r => console.log("SW:", r.scope), e => console.log("SW fail:", e));
       });
     }
   </script>
