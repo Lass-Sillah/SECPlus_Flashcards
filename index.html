@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -9,34 +9,46 @@
   <meta name="theme-color" content="#0B1215" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <title>Sec+ Cards — SY0-701</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body, #root { height: 100%; width: 100%; overflow-x: hidden; background: #0B1215; }
-    body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-    #root { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html, body, #root { height:100%; width:100%; background:#0B1215; overflow-x:hidden; }
+    body { -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+    #root { padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom); }
+    ::-webkit-scrollbar { display:none; }
+    @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+    @keyframes bounceIn { 0% { transform:scale(0.3);opacity:0 } 50% { transform:scale(1.05) } 100% { transform:scale(1);opacity:1 } }
+    @keyframes slideUp { from { transform:translateY(12px);opacity:0 } to { transform:translateY(0);opacity:1 } }
+    @keyframes slideDown { from { transform:translateX(-50%) translateY(-40px);opacity:0 } to { transform:translateX(-50%) translateY(0);opacity:1 } }
   </style>
 </head>
 <body>
   <div id="root"></div>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
 
-  <script type="text/babel" data-type="module">
-    const { useState, useEffect, useCallback, useRef, useMemo } = React;
+  <script type="text/babel">
+    var useState = React.useState;
+    var useEffect = React.useEffect;
+    var useCallback = React.useCallback;
+    var useRef = React.useRef;
+    var useMemo = React.useMemo;
 
-    /* ═══════════════ DOMAIN & SECTION CONFIG ═══════════════ */
-    const DOMAINS = [
-      { key: "d1", label: "Domain 1: General Security Concepts", short: "D1: Concepts", color: "#58CC02" },
-      { key: "d2", label: "Domain 2: Threats & Mitigations", short: "D2: Threats", color: "#FF4B4B" },
-      { key: "d3", label: "Domain 3: Security Architecture", short: "D3: Architecture", color: "#1CB0F6" },
-      { key: "d4", label: "Domain 4: Security Operations", short: "D4: Operations", color: "#CE82FF" },
-      { key: "d5", label: "Domain 5: Program Management", short: "D5: Program Mgmt", color: "#FF9600" },
+    /* ═══════════ CONFIG ═══════════ */
+    var DOMAINS = [
+      { key:"d1", label:"Domain 1: General Security Concepts", short:"D1: Concepts", color:"#58CC02" },
+      { key:"d2", label:"Domain 2: Threats & Mitigations", short:"D2: Threats", color:"#FF4B4B" },
+      { key:"d3", label:"Domain 3: Security Architecture", short:"D3: Architecture", color:"#1CB0F6" },
+      { key:"d4", label:"Domain 4: Security Operations", short:"D4: Operations", color:"#CE82FF" },
+      { key:"d5", label:"Domain 5: Program Management", short:"D5: Program Mgmt", color:"#FF9600" },
     ];
-    const DOMAIN_MAP = {}; DOMAINS.forEach(d => DOMAIN_MAP[d.label] = d);
+    var DOMAIN_MAP = {};
+    DOMAINS.forEach(function(d) { DOMAIN_MAP[d.label] = d; });
 
-    const SECTIONS_META = [
+    var SECTIONS_META = [
       { id:"fundamentals", title:"IT Security Fundamentals", domain:"Domain 1: General Security Concepts" },
       { id:"threats", title:"Threats & Attacks", domain:"Domain 2: Threats & Mitigations" },
       { id:"vulnerabilities", title:"Vulnerabilities", domain:"Domain 2: Threats & Mitigations" },
@@ -57,29 +69,25 @@
       { id:"physical", title:"Physical Security", domain:"Domain 5: Program Management" },
       { id:"resilience", title:"Resilience & Recovery", domain:"Domain 5: Program Management" },
     ];
-    // Add color from domain
-    SECTIONS_META.forEach(s => { s.color = DOMAIN_MAP[s.domain]?.color || "#888"; });
+    SECTIONS_META.forEach(function(s) { s.color = DOMAIN_MAP[s.domain] ? DOMAIN_MAP[s.domain].color : "#888"; });
 
-    /* ═══════════════ HELPERS ═══════════════ */
-    const getToday = () => new Date().toISOString().split("T")[0];
-    const getYesterday = () => { const d = new Date(); d.setDate(d.getDate() - 1); return d.toISOString().split("T")[0]; };
-    const shuffle = (arr) => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+    var FONT = "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif";
 
-    /* ═══════════════ THEMES ═══════════════ */
-    const THEMES = {
-      dark: {
-        bg: "#0B1215", card: "#141E23", cardHover: "#1A2830", border: "#1C2A31",
-        textPrimary: "#E8F0F2", textSecondary: "#7A9AA8", textMuted: "#3D5560",
-        cardFaceBack: "#141E23", overlay: "rgba(0,0,0,0.75)",
-      },
-      light: {
-        bg: "#F4F6F8", card: "#FFFFFF", cardHover: "#F0F2F5", border: "#E2E8ED",
-        textPrimary: "#1A2B33", textSecondary: "#5A7A88", textMuted: "#9CB0BA",
-        cardFaceBack: "#FFFFFF", overlay: "rgba(255,255,255,0.85)",
-      },
+    var THEMES = {
+      dark: { bg:"#0B1215", card:"#141E23", cardHover:"#1A2830", border:"#1C2A31", textPrimary:"#E8F0F2", textSecondary:"#7A9AA8", textMuted:"#3D5560", overlay:"rgba(0,0,0,0.75)" },
+      light: { bg:"#F4F6F8", card:"#FFFFFF", cardHover:"#F0F2F5", border:"#E2E8ED", textPrimary:"#1A2B33", textSecondary:"#5A7A88", textMuted:"#9CB0BA", overlay:"rgba(255,255,255,0.85)" },
     };
 
-    /* ═══════════════ CARD DATA ═══════════════ */
+    /* ═══════════ HELPERS ═══════════ */
+    function getToday() { return new Date().toISOString().split("T")[0]; }
+    function getYesterday() { var d = new Date(); d.setDate(d.getDate() - 1); return d.toISOString().split("T")[0]; }
+    function shuffleArray(arr) {
+      var a = arr.slice();
+      for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var tmp = a[i]; a[i] = a[j]; a[j] = tmp; }
+      return a;
+    }
+
+    /* ═══════════ CARD DATA ═══════════ */
     function generateCards() {
       return {
         "fundamentals": [
@@ -294,755 +302,596 @@
       };
     }
 
-    /* ═══════════════ SVG PROGRESS RING ═══════════════ */
-    function ProgressRing({ pct, color, size = 52, stroke = 4, label, theme }) {
-      const r = (size - stroke) / 2;
-      const circ = 2 * Math.PI * r;
-      const off = circ - (pct / 100) * circ;
-      return (
-        <div style={{ display:"flex",flexDirection:"column",alignItems:"center",gap:4 }}>
-          <div style={{ position:"relative",width:size,height:size }}>
-            <svg width={size} height={size} style={{ transform:"rotate(-90deg)",display:"block" }}>
-              <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={theme.border} strokeWidth={stroke} />
-              <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={stroke}
-                strokeDasharray={circ} strokeDashoffset={off} strokeLinecap="round"
-                style={{ transition:"stroke-dashoffset 0.6s ease" }} />
-            </svg>
-            <div style={{ position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center" }}>
-              <span style={{ fontSize:10,fontWeight:900,color }}>{pct}%</span>
-            </div>
-          </div>
-          {label && <div style={{ fontSize:9,fontWeight:700,color:theme.textMuted,textAlign:"center",lineHeight:1.1 }}>{label}</div>}
-        </div>
+    /* ═══════════ PROGRESS RING ═══════════ */
+    function ProgressRing(props) {
+      var pct = props.pct, color = props.color, size = props.size || 50, stroke = props.stroke || 4, label = props.label, theme = props.theme;
+      var r = (size - stroke) / 2;
+      var circ = 2 * Math.PI * r;
+      var off = circ - (pct / 100) * circ;
+      return React.createElement("div", {style:{display:"flex",flexDirection:"column",alignItems:"center",gap:4}},
+        React.createElement("div", {style:{position:"relative",width:size,height:size}},
+          React.createElement("svg", {width:size,height:size,style:{transform:"rotate(-90deg)",display:"block"}},
+            React.createElement("circle", {cx:size/2,cy:size/2,r:r,fill:"none",stroke:theme.border,strokeWidth:stroke}),
+            React.createElement("circle", {cx:size/2,cy:size/2,r:r,fill:"none",stroke:color,strokeWidth:stroke,strokeDasharray:circ,strokeDashoffset:off,strokeLinecap:"round",style:{transition:"stroke-dashoffset 0.6s ease"}})
+          ),
+          React.createElement("div", {style:{position:"absolute",top:0,left:0,right:0,bottom:0,display:"flex",alignItems:"center",justifyContent:"center"}},
+            React.createElement("span", {style:{fontSize:10,fontWeight:900,color:color}}, pct + "%")
+          )
+        ),
+        label ? React.createElement("div", {style:{fontSize:9,fontWeight:700,color:theme.textMuted,textAlign:"center",lineHeight:"1.1"}}, label) : null
       );
     }
 
-    /* ═══════════════ SWIPE HOOK ═══════════════ */
-    function useSwipe(onLeft, onRight) {
-      const ref = useRef(null);
-      const startX = useRef(0);
-      const startY = useRef(0);
-      const onLeftRef = useRef(onLeft);
-      const onRightRef = useRef(onRight);
-      onLeftRef.current = onLeft;
-      onRightRef.current = onRight;
-      useEffect(() => {
-        const el = ref.current; if (!el) return;
-        const ts = (e) => { startX.current = e.touches[0].clientX; startY.current = e.touches[0].clientY; };
-        const te = (e) => {
-          const dx = e.changedTouches[0].clientX - startX.current;
-          const dy = e.changedTouches[0].clientY - startY.current;
-          if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-            if (dx < 0) onLeftRef.current?.(); else onRightRef.current?.();
-          }
-        };
-        el.addEventListener("touchstart", ts, { passive: true });
-        el.addEventListener("touchend", te, { passive: true });
-        return () => { el.removeEventListener("touchstart", ts); el.removeEventListener("touchend", te); };
-      }, []); // eslint-disable-line
-      return ref;
-    }
-
-    /* ═══════════════ GLOBAL CSS ═══════════════ */
-    const GLOBAL_CSS = `
-      @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap');
-      @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
-      @keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0 } 50% { transform: scale(1.05) } 100% { transform: scale(1); opacity: 1 } }
-      @keyframes slideUp { from { transform: translateY(12px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
-      @keyframes slideDown { from { transform: translateX(-50%) translateY(-40px); opacity: 0 } to { transform: translateX(-50%) translateY(0); opacity: 1 } }
-      * { -webkit-tap-highlight-color: transparent; }
-      ::-webkit-scrollbar { display: none; }
-    `;
-
-    /* ═══════════════════════════════════════════ */
-    /*                  MAIN APP                  */
-    /* ═══════════════════════════════════════════ */
+    /* ═══════════ MAIN APP ═══════════ */
     function App() {
-      const [view, setView] = useState("home");
-      const [selectedSection, setSelectedSection] = useState(null);
-      const [cardData] = useState(() => generateCards());
-      const [progress, setProgress] = useState({});
-      const [currentCard, setCurrentCard] = useState(0);
-      const [flipped, setFlipped] = useState(false);
-      const [mastered, setMastered] = useState({});
-      const [searchQuery, setSearchQuery] = useState("");
+      var _view = useState("home"), view = _view[0], setView = _view[1];
+      var _sel = useState(null), selectedSection = _sel[0], setSelectedSection = _sel[1];
+      var _cd = useState(generateCards), cardData = _cd[0];
+      var _prog = useState({}), progress = _prog[0], setProgress = _prog[1];
+      var _cc = useState(0), currentCard = _cc[0], setCurrentCard = _cc[1];
+      var _fl = useState(false), flipped = _fl[0], setFlipped = _fl[1];
+      var _mst = useState({}), mastered = _mst[0], setMastered = _mst[1];
+      var _sq = useState(""), searchQuery = _sq[0], setSearchQuery = _sq[1];
 
       // Theme
-      const [themeName, setThemeName] = useState(() => {
-        try { return localStorage.getItem("secplus_theme") || "dark"; } catch { return "dark"; }
-      });
-      const T = THEMES[themeName];
-      useEffect(() => { try { localStorage.setItem("secplus_theme", themeName); } catch {} }, [themeName]);
-      useEffect(() => { document.getElementById("root").style.background = T.bg; document.body.style.background = T.bg; }, [T.bg]);
+      var _tn = useState(function() { try { return localStorage.getItem("secplus_theme") || "dark"; } catch(e) { return "dark"; } });
+      var themeName = _tn[0], setThemeName = _tn[1];
+      var T = THEMES[themeName];
+      useEffect(function() { try { localStorage.setItem("secplus_theme", themeName); } catch(e) {} }, [themeName]);
+      useEffect(function() { document.body.style.background = T.bg; document.getElementById("root").style.background = T.bg; }, [T.bg]);
 
       // Streak
-      const [dailyStreak, setDailyStreak] = useState(0);
-      const [lastStudyDate, setLastStudyDate] = useState(null);
-      const [todayCompleted, setTodayCompleted] = useState(false);
-      const [sectionsCompletedToday, setSectionsCompletedToday] = useState(new Set());
-      const [showCelebration, setShowCelebration] = useState(false);
-      const [showStreakPopup, setShowStreakPopup] = useState(false);
+      var _ds = useState(0), dailyStreak = _ds[0], setDailyStreak = _ds[1];
+      var _lsd = useState(null), lastStudyDate = _lsd[0], setLastStudyDate = _lsd[1];
+      var _tc = useState(false), todayCompleted = _tc[0], setTodayCompleted = _tc[1];
+      var _sct = useState(new Set()), sectionsCompletedToday = _sct[0], setSectionsCompletedToday = _sct[1];
+      var _sc2 = useState(false), showCelebration = _sc2[0], setShowCelebration = _sc2[1];
+      var _ssp = useState(false), showStreakPopup = _ssp[0], setShowStreakPopup = _ssp[1];
 
       // Study
-      const [shuffledMode, setShuffledMode] = useState(false);
-      const [unmasteredOnly, setUnmasteredOnly] = useState(false);
-      const [cardOrder, setCardOrder] = useState([]);
-      const [showResetConfirm, setShowResetConfirm] = useState(false);
+      var _shf = useState(false), shuffledMode = _shf[0], setShuffledMode = _shf[1];
+      var _um = useState(false), unmasteredOnly = _um[0], setUnmasteredOnly = _um[1];
+      var _co = useState([]), cardOrder = _co[0], setCardOrder = _co[1];
+      var _src = useState(false), showResetConfirm = _src[0], setShowResetConfirm = _src[1];
 
       // Random
-      const [randomPool, setRandomPool] = useState([]);
-      const [randomIndex, setRandomIndex] = useState(0);
-      const [randomCardsStudied, setRandomCardsStudied] = useState(0);
+      var _rp = useState([]), randomPool = _rp[0], setRandomPool = _rp[1];
+      var _ri = useState(0), randomIndex = _ri[0], setRandomIndex = _ri[1];
 
-      // Review mistakes
-      const [mistakePool, setMistakePool] = useState([]);
-      const [mistakeIndex, setMistakeIndex] = useState(0);
+      // Review
+      var _mp = useState([]), mistakePool = _mp[0], setMistakePool = _mp[1];
+      var _mi = useState(0), mistakeIndex = _mi[0], setMistakeIndex = _mi[1];
 
       // Quiz
-      const [quizPool, setQuizPool] = useState([]);
-      const [quizIndex, setQuizIndex] = useState(0);
-      const [quizChoices, setQuizChoices] = useState([]);
-      const [quizSelected, setQuizSelected] = useState(null);
-      const [quizScore, setQuizScore] = useState(0);
-      const [quizTotal, setQuizTotal] = useState(0);
+      var _qp = useState([]), quizPool = _qp[0], setQuizPool = _qp[1];
+      var _qi = useState(0), quizIndex = _qi[0], setQuizIndex = _qi[1];
+      var _qc = useState({}), quizChoices = _qc[0], setQuizChoices = _qc[1];
+      var _qs = useState(null), quizSelected = _qs[0], setQuizSelected = _qs[1];
+      var _qsc = useState(0), quizScore = _qsc[0], setQuizScore = _qsc[1];
+      var _qt = useState(0), quizTotal = _qt[0], setQuizTotal = _qt[1];
 
-      // Collapsible domains
-      const [collapsedDomains, setCollapsedDomains] = useState({});
-
-      // Session tracking
-      const [sessionStart, setSessionStart] = useState(null);
-      const [sessionCards, setSessionCards] = useState(0);
-      const [showSessionStats, setShowSessionStats] = useState(false);
+      // Collapsed domains
+      var _cdm = useState({}), collapsedDomains = _cdm[0], setCollapsedDomains = _cdm[1];
 
       // Sound
-      const [soundEnabled, setSoundEnabled] = useState(() => {
-        try { return JSON.parse(localStorage.getItem("secplus_soundEnabled") ?? "true"); } catch { return true; }
-      });
-      useEffect(() => { try { localStorage.setItem("secplus_soundEnabled", JSON.stringify(soundEnabled)); } catch {} }, [soundEnabled]);
-      const audioCtxRef = useRef(null);
-      const playSfx = useCallback((type) => {
+      var _se = useState(function() { try { return JSON.parse(localStorage.getItem("secplus_soundEnabled") || "true"); } catch(e) { return true; } });
+      var soundEnabled = _se[0], setSoundEnabled = _se[1];
+      useEffect(function() { try { localStorage.setItem("secplus_soundEnabled", JSON.stringify(soundEnabled)); } catch(e) {} }, [soundEnabled]);
+      var audioCtxRef = useRef(null);
+      var playSfx = useCallback(function(type) {
         if (!soundEnabled) return;
         try {
-          const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+          var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
           if (!audioCtxRef.current) audioCtxRef.current = new AC();
-          const ctx = audioCtxRef.current;
-          if (ctx.state === "suspended") ctx.resume().catch(() => {});
-          const now = ctx.currentTime, osc = ctx.createOscillator(), gain = ctx.createGain();
-          const map = { flip:{f:520,d:0.06}, nav:{f:440,d:0.05}, gotIt:{f:740,d:0.08}, streak:{f:880,d:0.10}, wrong:{f:300,d:0.12}, right:{f:660,d:0.10} };
-          const { f, d } = map[type] || map.nav;
-          osc.type = "sine"; osc.frequency.setValueAtTime(f, now);
+          var ctx = audioCtxRef.current;
+          if (ctx.state === "suspended") ctx.resume();
+          var now = ctx.currentTime, osc = ctx.createOscillator(), gain = ctx.createGain();
+          var map = { flip:{f:520,d:0.06}, nav:{f:440,d:0.05}, gotIt:{f:740,d:0.08}, streak:{f:880,d:0.10}, wrong:{f:300,d:0.12}, right:{f:660,d:0.10} };
+          var cfg = map[type] || map.nav;
+          osc.type = "sine"; osc.frequency.setValueAtTime(cfg.f, now);
           gain.gain.setValueAtTime(0.0001, now);
           gain.gain.exponentialRampToValueAtTime(0.25, now + 0.01);
-          gain.gain.exponentialRampToValueAtTime(0.0001, now + d);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + cfg.d);
           osc.connect(gain); gain.connect(ctx.destination);
-          osc.start(now); osc.stop(now + d + 0.02);
-        } catch {}
+          osc.start(now); osc.stop(now + cfg.d + 0.02);
+        } catch(e) {}
       }, [soundEnabled]);
 
       // Persistence
-      useEffect(() => {
+      useEffect(function() {
         try {
-          const r = localStorage.getItem("streak-data");
-          if (r) { const d = JSON.parse(r), today = getToday(), yest = getYesterday();
+          var r = localStorage.getItem("streak-data");
+          if (r) { var d = JSON.parse(r); var today = getToday(); var yest = getYesterday();
             if (d.lastStudyDate === today) { setDailyStreak(d.streak); setLastStudyDate(d.lastStudyDate); setTodayCompleted(true); setSectionsCompletedToday(new Set(d.sectionsToday || [])); }
             else if (d.lastStudyDate === yest) { setDailyStreak(d.streak); setLastStudyDate(d.lastStudyDate); }
           }
-        } catch {}
-        try { const m = localStorage.getItem("mastered-cards"); if (m) setMastered(JSON.parse(m)); } catch {}
-        try { const p = localStorage.getItem("card-progress"); if (p) setProgress(JSON.parse(p)); } catch {}
+        } catch(e) {}
+        try { var m = localStorage.getItem("mastered-cards"); if (m) setMastered(JSON.parse(m)); } catch(e) {}
+        try { var p = localStorage.getItem("card-progress"); if (p) setProgress(JSON.parse(p)); } catch(e) {}
       }, []);
-      const saveStreak = useCallback((s, d, st) => { try { localStorage.setItem("streak-data", JSON.stringify({ streak:s, lastStudyDate:d, sectionsToday:[...st] })); } catch {} }, []);
-      useEffect(() => { if (Object.keys(mastered).length > 0) try { localStorage.setItem("mastered-cards", JSON.stringify(mastered)); } catch {} }, [mastered]);
-      useEffect(() => { if (Object.keys(progress).length > 0) try { localStorage.setItem("card-progress", JSON.stringify(progress)); } catch {} }, [progress]);
+
+      var saveStreak = useCallback(function(s,d,st) { try { localStorage.setItem("streak-data", JSON.stringify({streak:s,lastStudyDate:d,sectionsToday:Array.from(st)})); } catch(e) {} }, []);
+      useEffect(function() { if (Object.keys(mastered).length > 0) try { localStorage.setItem("mastered-cards", JSON.stringify(mastered)); } catch(e) {} }, [mastered]);
+      useEffect(function() { if (Object.keys(progress).length > 0) try { localStorage.setItem("card-progress", JSON.stringify(progress)); } catch(e) {} }, [progress]);
 
       // Helpers
-      const buildCardOrder = useCallback((sid, cards, doShuf, doUnm, mst) => {
-        let idx = cards.map((_, i) => i);
-        if (doUnm) { const r = idx.filter(i => !mst[`${sid}-${i}`]); idx = r.length > 0 ? r : idx; }
-        if (doShuf) idx = shuffle(idx);
+      function buildCardOrder(sid, cards, doShuf, doUnm, mst) {
+        var idx = cards.map(function(_,i) { return i; });
+        if (doUnm) { var r = idx.filter(function(i) { return !mst[sid + "-" + i]; }); idx = r.length > 0 ? r : idx; }
+        if (doShuf) idx = shuffleArray(idx);
         return idx;
-      }, []);
+      }
 
-      const markStudied = useCallback((sid, ci) => {
-        setProgress(p => { const s = p[sid] || { studied:0, cards:{} }; const c = { ...s.cards, [ci]: true }; return { ...p, [sid]: { ...s, studied: Object.keys(c).length, cards: c } }; });
-        setSessionCards(c => c + 1);
-      }, []);
+      function markStudied(sid, ci) {
+        setProgress(function(p) { var s = p[sid] || {studied:0,cards:{}}; var c = Object.assign({}, s.cards); c[ci] = true; var up = Object.assign({}, p); up[sid] = {studied:Object.keys(c).length,cards:c}; return up; });
+      }
 
-      const markMastered = useCallback((sid, ci) => {
-        const key = `${sid}-${ci}`;
-        setMastered(prev => {
-          const up = { ...prev, [key]: true };
-          const sc = cardData?.[sid] || [];
-          if (sc.every((_, i) => up[`${sid}-${i}`]) && !sectionsCompletedToday.has(sid)) {
-            const today = getToday(), ns = new Set(sectionsCompletedToday); ns.add(sid); setSectionsCompletedToday(ns);
+      function markMastered(sid, ci) {
+        var key = sid + "-" + ci;
+        setMastered(function(prev) {
+          var up = Object.assign({}, prev); up[key] = true;
+          var sc = cardData[sid] || [];
+          var allDone = sc.every(function(_, i) { return up[sid + "-" + i]; });
+          if (allDone && !sectionsCompletedToday.has(sid)) {
+            var today = getToday(); var ns = new Set(sectionsCompletedToday); ns.add(sid); setSectionsCompletedToday(ns);
             if (!todayCompleted) {
-              const nk = (lastStudyDate === getYesterday() || lastStudyDate === today) ? dailyStreak + 1 : 1;
+              var nk = (lastStudyDate === getYesterday() || lastStudyDate === today) ? dailyStreak + 1 : 1;
               setDailyStreak(nk); playSfx("streak"); setLastStudyDate(today); setTodayCompleted(true);
-              setShowStreakPopup(true); setTimeout(() => setShowStreakPopup(false), 3000); saveStreak(nk, today, ns);
-            } else saveStreak(dailyStreak, today, ns);
-            setShowCelebration(true); setTimeout(() => setShowCelebration(false), 2500);
+              setShowStreakPopup(true); setTimeout(function() { setShowStreakPopup(false); }, 3000);
+              saveStreak(nk, today, ns);
+            } else { saveStreak(dailyStreak, today, ns); }
+            setShowCelebration(true); setTimeout(function() { setShowCelebration(false); }, 2500);
           }
           return up;
         });
         markStudied(sid, ci);
-      }, [markStudied, cardData, sectionsCompletedToday, todayCompleted, lastStudyDate, dailyStreak, saveStreak, playSfx]);
+      }
 
-      const resetSection = useCallback((sid) => {
-        setMastered(prev => {
-          const up = { ...prev };
-          Object.keys(up).forEach(k => { if (k.startsWith(sid + "-")) delete up[k]; });
-          try { localStorage.setItem("mastered-cards", JSON.stringify(up)); } catch {}
+      function resetSection(sid) {
+        setMastered(function(prev) {
+          var up = Object.assign({}, prev);
+          Object.keys(up).forEach(function(k) { if (k.indexOf(sid + "-") === 0) delete up[k]; });
+          try { localStorage.setItem("mastered-cards", JSON.stringify(up)); } catch(e) {}
           return up;
         });
-        setProgress(prev => { const up = { ...prev }; delete up[sid]; try { localStorage.setItem("card-progress", JSON.stringify(up)); } catch {} return up; });
+        setProgress(function(prev) { var up = Object.assign({}, prev); delete up[sid]; try { localStorage.setItem("card-progress", JSON.stringify(up)); } catch(e) {} return up; });
         setShowResetConfirm(false);
-      }, []);
+      }
 
-      // All cards flat
-      const allCards = useMemo(() => {
-        const pool = [];
-        Object.keys(cardData).forEach(sid => cardData[sid].forEach((card, idx) => pool.push({ sectionId: sid, cardIdx: idx, card })));
+      // Computed
+      var allCards = useMemo(function() {
+        var pool = [];
+        Object.keys(cardData).forEach(function(sid) { cardData[sid].forEach(function(card, idx) { pool.push({sectionId:sid, cardIdx:idx, card:card}); }); });
         return pool;
       }, [cardData]);
 
-      const totalCards = allCards.length;
-      const totalMastered = Object.keys(mastered).length;
+      var totalCards = allCards.length;
+      var totalMastered = Object.keys(mastered).length;
 
-      // Domain stats
-      const domainStats = useMemo(() => {
-        const stats = {};
-        DOMAINS.forEach(d => { stats[d.label] = { total: 0, mastered: 0 }; });
-        SECTIONS_META.forEach(s => {
-          const cards = cardData?.[s.id] || [];
+      var domainStats = useMemo(function() {
+        var stats = {};
+        DOMAINS.forEach(function(d) { stats[d.label] = {total:0, mastered:0}; });
+        SECTIONS_META.forEach(function(s) {
+          var cards = cardData[s.id] || [];
           stats[s.domain].total += cards.length;
-          cards.forEach((_, i) => { if (mastered[`${s.id}-${i}`]) stats[s.domain].mastered++; });
+          cards.forEach(function(_, i) { if (mastered[s.id + "-" + i]) stats[s.domain].mastered++; });
         });
         return stats;
       }, [cardData, mastered]);
 
-      // Build review mistakes pool
-      const buildMistakePool = useCallback(() => {
-        const pool = [];
-        Object.keys(cardData).forEach(sid => {
-          const studied = progress[sid]?.cards || {};
-          cardData[sid].forEach((card, idx) => {
-            if (studied[idx] && !mastered[`${sid}-${idx}`]) pool.push({ sectionId: sid, cardIdx: idx, card });
-          });
+      var mistakeCount = useMemo(function() {
+        var c = 0;
+        Object.keys(cardData).forEach(function(sid) {
+          var st = progress[sid] ? progress[sid].cards || {} : {};
+          cardData[sid].forEach(function(_, i) { if (st[i] && !mastered[sid + "-" + i]) c++; });
         });
-        return shuffle(pool);
+        return c;
       }, [cardData, progress, mastered]);
 
-      // Build quiz
-      const buildQuiz = useCallback(() => {
-        const pool = shuffle([...allCards]);
-        return pool;
-      }, [allCards]);
+      function buildMistakePool() {
+        var pool = [];
+        Object.keys(cardData).forEach(function(sid) {
+          var st = progress[sid] ? progress[sid].cards || {} : {};
+          cardData[sid].forEach(function(card, idx) { if (st[idx] && !mastered[sid + "-" + idx]) pool.push({sectionId:sid, cardIdx:idx, card:card}); });
+        });
+        return shuffleArray(pool);
+      }
 
-      const generateQuizChoices = useCallback((correctCard) => {
-        if (!correctCard) return { choices: [], correct: "" };
-        const correctAnswer = correctCard.card.c.split("\n")[0];
-        const wrong = allCards.filter(c => c.card.t !== correctCard.card.t);
-        const picks = shuffle(wrong).slice(0, 3).map(c => c.card.c.split("\n")[0]);
-        const all = shuffle([...picks, correctAnswer]);
-        return { choices: all, correct: correctAnswer };
-      }, [allCards]);
+      function generateQuizChoices(correctItem) {
+        if (!correctItem) return {choices:[], correct:""};
+        var correctAnswer = correctItem.card.c.split("\n")[0];
+        var wrong = allCards.filter(function(c) { return c.card.t !== correctItem.card.t; });
+        var picks = shuffleArray(wrong).slice(0, 3).map(function(c) { return c.card.c.split("\n")[0]; });
+        return {choices: shuffleArray(picks.concat([correctAnswer])), correct: correctAnswer};
+      }
 
-      // Navigation helpers
-      const goHome = useCallback(() => {
-        if (sessionStart && sessionCards > 2 && ["study","random","review","quiz"].includes(view)) {
-          setShowSessionStats(true);
-        } else {
-          setView("home"); setSessionStart(null); setSessionCards(0);
-        }
-        setFlipped(false); setCurrentCard(0);
-      }, [sessionStart, sessionCards, view]);
+      function goHome() { setView("home"); setFlipped(false); setCurrentCard(0); }
 
-      const dismissSession = useCallback(() => { setShowSessionStats(false); setView("home"); setSessionStart(null); setSessionCards(0); setFlipped(false); }, []);
-
-      const startSession = useCallback(() => { setSessionStart(Date.now()); setSessionCards(0); }, []);
-
-      const font = "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif";
-
-      /* ─── Swipe handlers ─── */
-      const swipeLeft = useCallback(() => {
-        if (view === "study") { if (!flipped) { setFlipped(true); } else if (currentCard < cardOrder.length - 1) { playSfx("nav"); setCurrentCard(c => c + 1); setFlipped(false); } }
-        else if (view === "random") { if (!flipped) setFlipped(true); else { playSfx("nav"); setFlipped(false); setRandomIndex(i => (i + 1) % randomPool.length); setRandomCardsStudied(c => c + 1); } }
-        else if (view === "review") { if (!flipped) setFlipped(true); else { playSfx("nav"); setFlipped(false); setMistakeIndex(i => Math.min(i + 1, mistakePool.length - 1)); } }
-      }, [view, flipped, currentCard, cardOrder, randomPool, mistakePool, playSfx]);
-
-      const swipeRight = useCallback(() => {
-        if (view === "study" && currentCard > 0) { playSfx("nav"); setCurrentCard(c => c - 1); setFlipped(false); }
-        else if (view === "review" && mistakeIndex > 0) { playSfx("nav"); setMistakeIndex(i => i - 1); setFlipped(false); }
-      }, [view, currentCard, mistakeIndex, playSfx]);
-
-      const swipeRef = useSwipe(swipeLeft, swipeRight);
-
-      /* ─── Keyboard ─── */
-      const stateRef = useRef({});
-      useEffect(() => { stateRef.current = { view, flipped, currentCard, cardOrder, selectedSection, randomPool, randomIndex, mistakePool, mistakeIndex }; },
-        [view, flipped, currentCard, cardOrder, selectedSection, randomPool, randomIndex, mistakePool, mistakeIndex]);
-
-      useEffect(() => {
-        if (!["study","random","review"].includes(view)) return;
-        const handler = (e) => {
-          const s = stateRef.current;
-          if (s.view === "study") {
-            const oi = s.cardOrder[s.currentCard] ?? s.currentCard;
-            if (e.code === "Space" || e.code === "ArrowUp") { e.preventDefault(); if (!s.flipped) markStudied(s.selectedSection.id, oi); playSfx("flip"); setFlipped(f => !f); }
-            else if (e.code === "ArrowRight" && s.currentCard < s.cardOrder.length - 1) { playSfx("nav"); setCurrentCard(c => c + 1); setFlipped(false); }
-            else if (e.code === "ArrowLeft" && s.currentCard > 0) { playSfx("nav"); setCurrentCard(c => c - 1); setFlipped(false); }
-            else if ((e.code === "KeyG" || e.code === "Enter") && s.flipped) { e.preventDefault(); playSfx("gotIt"); markMastered(s.selectedSection.id, oi); setFlipped(false); if (s.currentCard < s.cardOrder.length - 1) setCurrentCard(c => c + 1); }
-            else if (e.code === "KeyS" && s.flipped) { setFlipped(false); if (s.currentCard < s.cardOrder.length - 1) setCurrentCard(c => c + 1); }
-          } else if (s.view === "random") {
-            if (e.code === "Space") { e.preventDefault(); playSfx("flip"); setFlipped(f => !f); }
-            else if (["ArrowRight","KeyS","KeyG","Enter"].includes(e.code) && s.flipped) {
-              playSfx(e.code === "KeyG" || e.code === "Enter" ? "gotIt" : "nav");
-              setFlipped(false); setRandomIndex(i => (i + 1) % s.randomPool.length); setRandomCardsStudied(c => c + 1);
-            }
-          } else if (s.view === "review") {
-            if (e.code === "Space") { e.preventDefault(); playSfx("flip"); setFlipped(f => !f); }
-            else if (e.code === "ArrowRight" && s.mistakeIndex < s.mistakePool.length - 1) { playSfx("nav"); setMistakeIndex(i => i + 1); setFlipped(false); }
-            else if (e.code === "ArrowLeft" && s.mistakeIndex > 0) { playSfx("nav"); setMistakeIndex(i => i - 1); setFlipped(false); }
-          }
-        };
-        window.addEventListener("keydown", handler);
-        return () => window.removeEventListener("keydown", handler);
-      }, [view, markStudied, markMastered, playSfx]);
-
-      /* ─── Shared Components ─── */
-      const BackBtn = ({ onClick }) => (
-        <button onClick={onClick} style={{ background:"none",border:"none",color:T.textSecondary,fontSize:14,cursor:"pointer",padding:"8px 0",fontWeight:700,fontFamily:font,display:"flex",alignItems:"center",gap:6 }}>
-          <span style={{ fontSize:18 }}>&#8592;</span> Back
-        </button>
-      );
-
-      const Overlays = () => (
-        <>
-          {showCelebration && (
-            <div style={{ position:"fixed",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:T.overlay,zIndex:999,animation:"fadeIn 0.3s ease",backdropFilter:"blur(8px)" }}>
-              <div style={{ textAlign:"center",animation:"bounceIn 0.5s ease",background:T.card,borderRadius:20,padding:"36px 44px",border:`1px solid ${T.border}` }}>
-                <div style={{ fontSize:18,fontWeight:800,color:T.textPrimary,marginBottom:6 }}>DECK COMPLETE</div>
-                <div style={{ fontSize:13,color:T.textSecondary,fontWeight:600 }}>Every card in this section mastered</div>
-                <div style={{ width:40,height:3,background:"#58CC02",borderRadius:2,margin:"14px auto 0" }} />
-              </div>
-            </div>
-          )}
-          {showStreakPopup && (
-            <div style={{ position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",zIndex:1000,animation:"slideDown 0.4s ease" }}>
-              <div style={{ background:T.card,border:"1px solid #FFC80044",borderRadius:14,padding:"14px 24px",display:"flex",alignItems:"center",gap:14,boxShadow:"0 12px 40px rgba(0,0,0,0.3)" }}>
-                <div style={{ width:44,height:44,borderRadius:12,background:"rgba(255,200,0,0.12)",display:"flex",alignItems:"center",justifyContent:"center" }}>
-                  <span style={{ fontSize:22,color:"#FFC800",fontWeight:900 }}>{dailyStreak}</span>
-                </div>
-                <div>
-                  <div style={{ fontSize:15,fontWeight:800,color:"#FFC800" }}>Day Streak!</div>
-                  <div style={{ fontSize:11,fontWeight:600,color:T.textSecondary }}>{dailyStreak === 1 ? "Come back tomorrow" : "Keep it going!"}</div>
-                </div>
-              </div>
-            </div>
-          )}
-          {showSessionStats && (
-            <div style={{ position:"fixed",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:T.overlay,zIndex:999,backdropFilter:"blur(8px)" }}>
-              <div style={{ background:T.card,borderRadius:20,padding:"32px 36px",border:`1px solid ${T.border}`,textAlign:"center",minWidth:260 }}>
-                <div style={{ fontSize:16,fontWeight:800,color:T.textPrimary,marginBottom:16 }}>Session Summary</div>
-                <div style={{ display:"flex",justifyContent:"center",gap:24,marginBottom:20 }}>
-                  <div><div style={{ fontSize:28,fontWeight:900,color:"#58CC02" }}>{sessionCards}</div><div style={{ fontSize:10,fontWeight:700,color:T.textMuted }}>cards</div></div>
-                  <div><div style={{ fontSize:28,fontWeight:900,color:"#1CB0F6" }}>{sessionStart ? Math.round((Date.now() - sessionStart) / 60000) : 0}</div><div style={{ fontSize:10,fontWeight:700,color:T.textMuted }}>minutes</div></div>
-                </div>
-                <button onClick={dismissSession} style={{ padding:"12px 32px",borderRadius:10,border:"none",background:"#58CC02",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:font }}>Done</button>
-              </div>
-            </div>
-          )}
-        </>
-      );
-
-      /* Flashcard component used in study, random, review */
-      const FlashCard = ({ card, color, flipped: fl, onFlip, isMastered, showMastered = true }) => (
-        <div onClick={onFlip} style={{
-          background: fl ? T.cardFaceBack : color, borderRadius:16, padding:28, minHeight:340, cursor:"pointer",
-          display:"flex", flexDirection:"column", justifyContent: fl ? "flex-start" : "center", alignItems: fl ? "flex-start" : "center",
-          border: fl ? `1px solid ${T.border}` : "none",
-          boxShadow: fl ? `0 8px 32px rgba(0,0,0,${themeName==='dark'?0.4:0.1})` : `0 6px 0 ${color}66, 0 12px 40px rgba(0,0,0,${themeName==='dark'?0.3:0.08})`,
-          transition:"all 0.25s ease", position:"relative",
-        }}>
-          {!fl ? (
-            <>
-              <div style={{ fontSize:22,fontWeight:800,textAlign:"center",color:"#fff",textShadow:"0 2px 4px rgba(0,0,0,0.2)",lineHeight:1.3 }}>{card?.t}</div>
-              <div style={{ marginTop:18,fontSize:11,color:"rgba(255,255,255,0.6)",fontWeight:700,textTransform:"uppercase",letterSpacing:1.5 }}>Tap to reveal</div>
-            </>
-          ) : (
-            <>
-              <div style={{ fontSize:13,fontWeight:800,color,marginBottom:10,textTransform:"uppercase",letterSpacing:0.5 }}>{card?.t}</div>
-              <div style={{ fontSize:13,lineHeight:1.75,color:T.textPrimary,whiteSpace:"pre-line",fontWeight:500,opacity:0.9 }}>{card?.c}</div>
-              {showMastered && isMastered && <div style={{ position:"absolute",top:14,right:14,background:"#58CC02",borderRadius:50,width:26,height:26,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#fff",fontWeight:800 }}>&#10003;</div>}
-            </>
-          )}
-        </div>
-      );
-
-      /* ═══════════ QUIZ VIEW ═══════════ */
+      /* ═══════════ RENDER: QUIZ ═══════════ */
       if (view === "quiz") {
-        const item = quizPool[quizIndex];
-        if (!item) { setView("home"); return null; }
-        const sectionMeta = SECTIONS_META.find(s => s.id === item.sectionId);
-        const color = sectionMeta?.color || "#888";
-        const isAnswered = quizSelected !== null;
-        const choices = quizChoices.choices || [];
+        var qItem = quizPool[quizIndex];
+        if (!qItem) return React.createElement("div", {style:{minHeight:"100vh",background:T.bg,fontFamily:FONT,color:T.textPrimary,display:"flex",alignItems:"center",justifyContent:"center"}},
+          React.createElement("button", {onClick:goHome, style:{padding:"12px 24px",borderRadius:10,border:"none",background:"#58CC02",color:"#fff",fontWeight:800,cursor:"pointer",fontFamily:FONT}}, "Back Home"));
+
+        var qMeta = SECTIONS_META.find(function(s) { return s.id === qItem.sectionId; });
+        var qColor = qMeta ? qMeta.color : "#888";
+        var isAnswered = quizSelected !== null;
+        var choices = quizChoices.choices || [];
 
         return (
-          <div style={{ minHeight:"100vh",background:T.bg,fontFamily:font,color:T.textPrimary,maxWidth:480,margin:"0 auto" }}>
-            <Overlays />
-            <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 20px",borderBottom:`1px solid ${T.border}` }}>
-              <BackBtn onClick={goHome} />
-              <div style={{ display:"flex",alignItems:"center",gap:12 }}>
-                <span style={{ color:T.textMuted,fontSize:11,fontWeight:700 }}>QUIZ</span>
-                <div style={{ background:T.card,borderRadius:10,padding:"6px 12px",border:`1px solid ${T.border}` }}>
-                  <span style={{ color:"#58CC02",fontSize:13,fontWeight:800 }}>{quizScore}/{quizTotal}</span>
+          <div style={{minHeight:"100vh",background:T.bg,fontFamily:FONT,color:T.textPrimary,maxWidth:480,margin:"0 auto"}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 20px",borderBottom:"1px solid " + T.border}}>
+              <button onClick={goHome} style={{background:"none",border:"none",color:T.textSecondary,fontSize:14,cursor:"pointer",fontWeight:700,fontFamily:FONT}}>&#8592; Back</button>
+              <div style={{display:"flex",alignItems:"center",gap:12}}>
+                <span style={{color:T.textMuted,fontSize:11,fontWeight:700}}>QUIZ</span>
+                <div style={{background:T.card,borderRadius:10,padding:"6px 12px",border:"1px solid " + T.border}}>
+                  <span style={{color:"#58CC02",fontSize:13,fontWeight:800}}>{quizScore}/{quizTotal}</span>
                 </div>
               </div>
             </div>
-
-            <div style={{ padding:"20px" }}>
-              <div style={{ height:3,width:16,borderRadius:2,background:color,marginBottom:6,display:"inline-block" }} />
-              <span style={{ fontSize:10,fontWeight:700,color,letterSpacing:0.5,marginLeft:8 }}>{sectionMeta?.title?.toUpperCase()}</span>
-
-              <div style={{ background:color,borderRadius:14,padding:"28px 24px",marginTop:12,marginBottom:20 }}>
-                <div style={{ fontSize:20,fontWeight:800,color:"#fff",textAlign:"center",textShadow:"0 1px 3px rgba(0,0,0,0.2)" }}>{item.card.t}</div>
-                <div style={{ marginTop:12,fontSize:11,color:"rgba(255,255,255,0.6)",textAlign:"center",fontWeight:700,textTransform:"uppercase",letterSpacing:1 }}>Select the correct answer</div>
+            <div style={{padding:20}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+                <div style={{height:3,width:16,borderRadius:2,background:qColor}} />
+                <span style={{fontSize:10,fontWeight:700,color:qColor,letterSpacing:0.5}}>{qMeta ? qMeta.title.toUpperCase() : ""}</span>
               </div>
-
-              <div style={{ display:"flex",flexDirection:"column",gap:10 }}>
-                {choices.map((choice, i) => {
-                  const selected = quizSelected === choice;
-                  const isRight = choice === quizChoices.correct;
-                  let bg = T.card, border = T.border, textColor = T.textPrimary;
+              <div style={{background:qColor,borderRadius:14,padding:"28px 24px",marginBottom:20}}>
+                <div style={{fontSize:20,fontWeight:800,color:"#fff",textAlign:"center",textShadow:"0 1px 3px rgba(0,0,0,0.2)"}}>{qItem.card.t}</div>
+                <div style={{marginTop:12,fontSize:11,color:"rgba(255,255,255,0.6)",textAlign:"center",fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>Select the correct answer</div>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                {choices.map(function(choice, i) {
+                  var selected = quizSelected === choice;
+                  var isRight = choice === quizChoices.correct;
+                  var bg = T.card, border = T.border, tc = T.textPrimary;
                   if (isAnswered) {
-                    if (isRight) { bg = "rgba(88,204,2,0.15)"; border = "#58CC02"; textColor = "#58CC02"; }
-                    else if (selected && !isRight) { bg = "rgba(255,75,75,0.15)"; border = "#FF4B4B"; textColor = "#FF4B4B"; }
-                    else { textColor = T.textMuted; }
+                    if (isRight) { bg = "rgba(88,204,2,0.15)"; border = "#58CC02"; tc = "#58CC02"; }
+                    else if (selected && !isRight) { bg = "rgba(255,75,75,0.15)"; border = "#FF4B4B"; tc = "#FF4B4B"; }
+                    else { tc = T.textMuted; }
                   }
                   return (
-                    <button key={i} onClick={() => {
+                    <button key={i} onClick={function() {
                       if (isAnswered) return;
                       setQuizSelected(choice);
-                      setQuizTotal(t => t + 1);
-                      if (choice === quizChoices.correct) { setQuizScore(s => s + 1); playSfx("right"); }
+                      setQuizTotal(function(t) { return t + 1; });
+                      if (choice === quizChoices.correct) { setQuizScore(function(s) { return s + 1; }); playSfx("right"); }
                       else playSfx("wrong");
-                    }} style={{
-                      padding:"14px 16px",borderRadius:12,border:`1px solid ${border}`,background:bg,
-                      color:textColor,fontSize:13,fontWeight:600,cursor:isAnswered ? "default" : "pointer",
-                      textAlign:"left",fontFamily:font,lineHeight:1.4,
-                      transition:"all 0.2s ease",
-                    }}>
-                      <span style={{ fontWeight:800,marginRight:8,color:T.textMuted }}>{String.fromCharCode(65 + i)}.</span>
+                    }} style={{padding:"14px 16px",borderRadius:12,border:"1px solid " + border,background:bg,color:tc,fontSize:13,fontWeight:600,cursor:isAnswered?"default":"pointer",textAlign:"left",fontFamily:FONT,lineHeight:1.4}}>
+                      <span style={{fontWeight:800,marginRight:8,color:T.textMuted}}>{String.fromCharCode(65 + i)}.</span>
                       {choice.length > 80 ? choice.slice(0, 80) + "..." : choice}
                     </button>
                   );
                 })}
               </div>
-
               {isAnswered && (
-                <button onClick={() => {
-                  const ni = quizIndex + 1;
-                  if (ni < quizPool.length) {
-                    setQuizIndex(ni);
-                    const ch = generateQuizChoices(quizPool[ni]);
-                    setQuizChoices(ch);
-                    setQuizSelected(null);
-                  } else {
-                    setQuizIndex(0);
-                    const p = buildQuiz(); setQuizPool(p);
-                    const ch = generateQuizChoices(p[0]);
-                    setQuizChoices(ch); setQuizSelected(null);
-                  }
-                  playSfx("nav");
-                }} style={{
-                  width:"100%",padding:"14px",borderRadius:12,border:"none",background:color,color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:font,marginTop:16,
-                }}>Next Question</button>
+                <button onClick={function() {
+                  var ni = quizIndex + 1;
+                  if (ni < quizPool.length) { setQuizIndex(ni); setQuizChoices(generateQuizChoices(quizPool[ni])); }
+                  else { var p = shuffleArray(allCards.slice()); setQuizPool(p); setQuizIndex(0); setQuizChoices(generateQuizChoices(p[0])); }
+                  setQuizSelected(null); playSfx("nav");
+                }} style={{width:"100%",padding:"14px",borderRadius:12,border:"none",background:qColor,color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:FONT,marginTop:16}}>
+                  Next Question
+                </button>
               )}
             </div>
-            <style>{GLOBAL_CSS}</style>
           </div>
         );
       }
 
-      /* ═══════════ REVIEW MISTAKES VIEW ═══════════ */
+      /* ═══════════ RENDER: REVIEW ═══════════ */
       if (view === "review") {
-        const item = mistakePool[mistakeIndex];
-        if (!item || mistakePool.length === 0) return (
-          <div style={{ minHeight:"100vh",background:T.bg,fontFamily:font,color:T.textPrimary,maxWidth:480,margin:"0 auto",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:40 }}>
-            <div style={{ fontSize:16,fontWeight:800,color:T.textPrimary,marginBottom:8 }}>No mistakes to review</div>
-            <div style={{ fontSize:13,color:T.textSecondary,marginBottom:20,textAlign:"center" }}>Study some cards first, then come back to review the ones you haven't mastered yet.</div>
-            <button onClick={() => setView("home")} style={{ padding:"12px 24px",borderRadius:10,border:"none",background:"#58CC02",color:"#fff",fontWeight:800,cursor:"pointer",fontFamily:font }}>Back Home</button>
-            <style>{GLOBAL_CSS}</style>
+        var rItem = mistakePool[mistakeIndex];
+        if (!rItem || mistakePool.length === 0) return (
+          <div style={{minHeight:"100vh",background:T.bg,fontFamily:FONT,color:T.textPrimary,maxWidth:480,margin:"0 auto",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:40}}>
+            <div style={{fontSize:16,fontWeight:800,marginBottom:8}}>No mistakes to review</div>
+            <div style={{fontSize:13,color:T.textSecondary,marginBottom:20,textAlign:"center"}}>Study some cards first, then come back to review ones you haven't mastered.</div>
+            <button onClick={goHome} style={{padding:"12px 24px",borderRadius:10,border:"none",background:"#58CC02",color:"#fff",fontWeight:800,cursor:"pointer",fontFamily:FONT}}>Back Home</button>
           </div>
         );
-        const sectionMeta = SECTIONS_META.find(s => s.id === item.sectionId);
-        const color = sectionMeta?.color || "#888";
+        var rMeta = SECTIONS_META.find(function(s) { return s.id === rItem.sectionId; });
+        var rColor = rMeta ? rMeta.color : "#888";
 
         return (
-          <div ref={swipeRef} style={{ minHeight:"100vh",background:T.bg,fontFamily:font,color:T.textPrimary,maxWidth:480,margin:"0 auto" }}>
-            <Overlays />
-            <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 20px",borderBottom:`1px solid ${T.border}` }}>
-              <BackBtn onClick={goHome} />
-              <div style={{ display:"flex",alignItems:"center",gap:12 }}>
-                <span style={{ color:"#FF4B4B",fontSize:11,fontWeight:700 }}>REVIEW MISTAKES</span>
-                <span style={{ color:T.textSecondary,fontSize:13,fontWeight:700 }}>{mistakeIndex + 1}/{mistakePool.length}</span>
+          <div style={{minHeight:"100vh",background:T.bg,fontFamily:FONT,color:T.textPrimary,maxWidth:480,margin:"0 auto"}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 20px",borderBottom:"1px solid " + T.border}}>
+              <button onClick={goHome} style={{background:"none",border:"none",color:T.textSecondary,fontSize:14,cursor:"pointer",fontWeight:700,fontFamily:FONT}}>&#8592; Back</button>
+              <div style={{display:"flex",alignItems:"center",gap:12}}>
+                <span style={{color:"#FF4B4B",fontSize:11,fontWeight:700}}>REVIEW</span>
+                <span style={{color:T.textSecondary,fontSize:13,fontWeight:700}}>{mistakeIndex + 1}/{mistakePool.length}</span>
               </div>
             </div>
-            <div style={{ padding:"12px 20px 0",display:"flex",alignItems:"center",gap:8 }}>
-              <div style={{ height:3,width:16,borderRadius:2,background:color }} />
-              <span style={{ fontSize:10,fontWeight:700,color,letterSpacing:0.5 }}>{sectionMeta?.title?.toUpperCase()}</span>
+            <div style={{padding:"12px 20px 0",display:"flex",alignItems:"center",gap:8}}>
+              <div style={{height:3,width:16,borderRadius:2,background:rColor}} />
+              <span style={{fontSize:10,fontWeight:700,color:rColor,letterSpacing:0.5}}>{rMeta ? rMeta.title.toUpperCase() : ""}</span>
             </div>
-            <div style={{ padding:"16px 20px 100px" }}>
-              <FlashCard card={item.card} color={color} flipped={flipped} onFlip={() => { playSfx("flip"); setFlipped(f => !f); }} showMastered={false} />
+            <div style={{padding:"16px 20px 100px"}}>
+              <div onClick={function() { playSfx("flip"); setFlipped(!flipped); }}
+                style={{background:flipped ? T.card : rColor,borderRadius:16,padding:28,minHeight:340,cursor:"pointer",display:"flex",flexDirection:"column",justifyContent:flipped?"flex-start":"center",alignItems:flipped?"flex-start":"center",border:flipped?"1px solid "+T.border:"none",boxShadow:flipped?"0 8px 32px rgba(0,0,0,0.3)":"0 6px 0 "+rColor+"66",transition:"all 0.25s ease"}}>
+                {!flipped ? (
+                  <React.Fragment>
+                    <div style={{fontSize:22,fontWeight:800,textAlign:"center",color:"#fff",textShadow:"0 2px 4px rgba(0,0,0,0.2)",lineHeight:1.3}}>{rItem.card.t}</div>
+                    <div style={{marginTop:18,fontSize:11,color:"rgba(255,255,255,0.6)",fontWeight:700,textTransform:"uppercase",letterSpacing:1.5}}>Tap to reveal</div>
+                  </React.Fragment>
+                ) : (
+                  <React.Fragment>
+                    <div style={{fontSize:13,fontWeight:800,color:rColor,marginBottom:10,textTransform:"uppercase",letterSpacing:0.5}}>{rItem.card.t}</div>
+                    <div style={{fontSize:13,lineHeight:1.75,color:T.textPrimary,whiteSpace:"pre-line",fontWeight:500,opacity:0.9}}>{rItem.card.c}</div>
+                  </React.Fragment>
+                )}
+              </div>
               {flipped && (
-                <div style={{ display:"flex",gap:12,marginTop:16,animation:"slideUp 0.25s ease" }}>
-                  <button onClick={() => { playSfx("nav"); setFlipped(false); if (mistakeIndex < mistakePool.length - 1) setMistakeIndex(i => i + 1); }}
-                    style={{ flex:1,padding:"14px 20px",borderRadius:12,border:`1px solid #FF4B4B`,background:"transparent",color:"#FF4B4B",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:font }}>NEXT</button>
-                  <button onClick={() => { playSfx("gotIt"); markMastered(item.sectionId, item.cardIdx); setFlipped(false); if (mistakeIndex < mistakePool.length - 1) setMistakeIndex(i => i + 1); }}
-                    style={{ flex:1,padding:"14px 20px",borderRadius:12,border:"none",background:"#58CC02",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:font,boxShadow:"0 3px 0 #46A302" }}>MASTERED</button>
+                <div style={{display:"flex",gap:12,marginTop:16,animation:"slideUp 0.25s ease"}}>
+                  <button onClick={function() { playSfx("nav"); setFlipped(false); if (mistakeIndex < mistakePool.length - 1) setMistakeIndex(mistakeIndex + 1); }}
+                    style={{flex:1,padding:"14px",borderRadius:12,border:"1px solid #FF4B4B",background:"transparent",color:"#FF4B4B",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:FONT}}>NEXT</button>
+                  <button onClick={function() { playSfx("gotIt"); markMastered(rItem.sectionId, rItem.cardIdx); setFlipped(false); if (mistakeIndex < mistakePool.length - 1) setMistakeIndex(mistakeIndex + 1); }}
+                    style={{flex:1,padding:"14px",borderRadius:12,border:"none",background:"#58CC02",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:FONT,boxShadow:"0 3px 0 #46A302"}}>MASTERED</button>
                 </div>
               )}
             </div>
-            <style>{GLOBAL_CSS}</style>
           </div>
         );
       }
 
-      /* ═══════════ RANDOM VIEW ═══════════ */
+      /* ═══════════ RENDER: RANDOM ═══════════ */
       if (view === "random") {
-        const item = randomPool[randomIndex];
-        if (!item) return null;
-        const sectionMeta = SECTIONS_META.find(s => s.id === item.sectionId);
-        const color = sectionMeta?.color || "#888";
+        var randItem = randomPool[randomIndex];
+        if (!randItem) return null;
+        var randMeta = SECTIONS_META.find(function(s) { return s.id === randItem.sectionId; });
+        var randColor = randMeta ? randMeta.color : "#888";
+
         return (
-          <div ref={swipeRef} style={{ minHeight:"100vh",background:T.bg,fontFamily:font,color:T.textPrimary,maxWidth:480,margin:"0 auto" }}>
-            <Overlays />
-            <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 20px",borderBottom:`1px solid ${T.border}` }}>
-              <BackBtn onClick={goHome} />
-              <div style={{ display:"flex",alignItems:"center",gap:12 }}>
-                <span style={{ color:T.textMuted,fontSize:11,fontWeight:700 }}>RANDOM</span>
-                <span style={{ color:T.textSecondary,fontSize:13,fontWeight:700 }}>{randomIndex + 1} of {randomPool.length}</span>
+          <div style={{minHeight:"100vh",background:T.bg,fontFamily:FONT,color:T.textPrimary,maxWidth:480,margin:"0 auto"}}>
+            {showCelebration && <div style={{position:"fixed",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:T.overlay,zIndex:999,animation:"fadeIn 0.3s ease",backdropFilter:"blur(8px)"}}>
+              <div style={{textAlign:"center",animation:"bounceIn 0.5s ease",background:T.card,borderRadius:20,padding:"36px 44px",border:"1px solid "+T.border}}>
+                <div style={{fontSize:18,fontWeight:800,color:T.textPrimary,marginBottom:6}}>DECK COMPLETE</div>
+                <div style={{fontSize:13,color:T.textSecondary,fontWeight:600}}>Every card mastered</div>
+              </div>
+            </div>}
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 20px",borderBottom:"1px solid " + T.border}}>
+              <button onClick={goHome} style={{background:"none",border:"none",color:T.textSecondary,fontSize:14,cursor:"pointer",fontWeight:700,fontFamily:FONT}}>&#8592; Back</button>
+              <div style={{display:"flex",alignItems:"center",gap:12}}>
+                <span style={{color:T.textMuted,fontSize:11,fontWeight:700}}>RANDOM</span>
+                <span style={{color:T.textSecondary,fontSize:13,fontWeight:700}}>{randomIndex + 1} of {randomPool.length}</span>
               </div>
             </div>
-            <div style={{ padding:"12px 20px 0",display:"flex",alignItems:"center",gap:8 }}>
-              <div style={{ height:3,width:16,borderRadius:2,background:color }} />
-              <span style={{ fontSize:10,fontWeight:700,color,letterSpacing:0.5 }}>{sectionMeta?.title?.toUpperCase()}</span>
+            <div style={{padding:"12px 20px 0",display:"flex",alignItems:"center",gap:8}}>
+              <div style={{height:3,width:16,borderRadius:2,background:randColor}} />
+              <span style={{fontSize:10,fontWeight:700,color:randColor,letterSpacing:0.5}}>{randMeta ? randMeta.title.toUpperCase() : ""}</span>
             </div>
-            <div style={{ padding:"16px 20px 100px" }}>
-              <FlashCard card={item.card} color={color} flipped={flipped} onFlip={() => { playSfx("flip"); setFlipped(f => !f); }} showMastered={false} />
+            <div style={{padding:"16px 20px 100px"}}>
+              <div onClick={function() { playSfx("flip"); setFlipped(!flipped); }}
+                style={{background:flipped ? T.card : randColor,borderRadius:16,padding:28,minHeight:340,cursor:"pointer",display:"flex",flexDirection:"column",justifyContent:flipped?"flex-start":"center",alignItems:flipped?"flex-start":"center",border:flipped?"1px solid "+T.border:"none",boxShadow:flipped?"0 8px 32px rgba(0,0,0,0.3)":"0 6px 0 "+randColor+"66",transition:"all 0.25s ease"}}>
+                {!flipped ? (
+                  <React.Fragment>
+                    <div style={{fontSize:22,fontWeight:800,textAlign:"center",color:"#fff",textShadow:"0 2px 4px rgba(0,0,0,0.2)",lineHeight:1.3}}>{randItem.card.t}</div>
+                    <div style={{marginTop:18,fontSize:11,color:"rgba(255,255,255,0.6)",fontWeight:700,textTransform:"uppercase",letterSpacing:1.5}}>Tap to reveal</div>
+                  </React.Fragment>
+                ) : (
+                  <React.Fragment>
+                    <div style={{fontSize:13,fontWeight:800,color:randColor,marginBottom:10,textTransform:"uppercase",letterSpacing:0.5}}>{randItem.card.t}</div>
+                    <div style={{fontSize:13,lineHeight:1.75,color:T.textPrimary,whiteSpace:"pre-line",fontWeight:500,opacity:0.9}}>{randItem.card.c}</div>
+                  </React.Fragment>
+                )}
+              </div>
               {flipped && (
-                <div style={{ display:"flex",gap:12,marginTop:16,animation:"slideUp 0.25s ease" }}>
-                  <button onClick={() => { playSfx("nav"); setFlipped(false); setRandomIndex(i => (i + 1) % randomPool.length); setRandomCardsStudied(c => c + 1); }}
-                    style={{ flex:1,padding:"14px",borderRadius:12,border:`1px solid #FF4B4B`,background:"transparent",color:"#FF4B4B",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:font }}>NEXT</button>
-                  <button onClick={() => { playSfx("gotIt"); setFlipped(false); setRandomIndex(i => (i + 1) % randomPool.length); setRandomCardsStudied(c => c + 1); }}
-                    style={{ flex:1,padding:"14px",borderRadius:12,border:"none",background:"#58CC02",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:font,boxShadow:"0 3px 0 #46A302" }}>GOT IT</button>
+                <div style={{display:"flex",gap:12,marginTop:16,animation:"slideUp 0.25s ease"}}>
+                  <button onClick={function() { playSfx("nav"); setFlipped(false); setRandomIndex(function(i) { return (i + 1) % randomPool.length; }); }}
+                    style={{flex:1,padding:"14px",borderRadius:12,border:"1px solid #FF4B4B",background:"transparent",color:"#FF4B4B",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:FONT}}>NEXT</button>
+                  <button onClick={function() { playSfx("gotIt"); setFlipped(false); setRandomIndex(function(i) { return (i + 1) % randomPool.length; }); }}
+                    style={{flex:1,padding:"14px",borderRadius:12,border:"none",background:"#58CC02",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:FONT,boxShadow:"0 3px 0 #46A302"}}>GOT IT</button>
                 </div>
               )}
-              <div style={{ textAlign:"center",marginTop:14 }}>
-                <button onClick={() => { setRandomPool(shuffle([...allCards])); setRandomIndex(0); setFlipped(false); playSfx("nav"); }} style={{ background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:"8px 16px",color:T.textSecondary,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:font }}>Reshuffle</button>
+              <div style={{textAlign:"center",marginTop:14}}>
+                <button onClick={function() { setRandomPool(shuffleArray(allCards.slice())); setRandomIndex(0); setFlipped(false); playSfx("nav"); }}
+                  style={{background:T.card,border:"1px solid "+T.border,borderRadius:10,padding:"8px 16px",color:T.textSecondary,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:FONT}}>Reshuffle</button>
               </div>
             </div>
-            <style>{GLOBAL_CSS}</style>
           </div>
         );
       }
 
-      /* ═══════════ STUDY VIEW ═══════════ */
-      if (view === "study" && selectedSection && cardData) {
-        const cards = cardData[selectedSection.id] || [];
-        const displayOrder = cardOrder.length > 0 ? cardOrder : cards.map((_, i) => i);
-        const oi = displayOrder[currentCard] ?? currentCard;
-        const card = cards[oi];
-        const color = selectedSection.color;
-        const im = mastered[`${selectedSection.id}-${oi}`];
-        const pPct = displayOrder.length > 0 ? ((currentCard + 1) / displayOrder.length) * 100 : 0;
+      /* ═══════════ RENDER: STUDY ═══════════ */
+      if (view === "study" && selectedSection) {
+        var cards = cardData[selectedSection.id] || [];
+        var displayOrder = cardOrder.length > 0 ? cardOrder : cards.map(function(_,i) { return i; });
+        var oi = displayOrder[currentCard] != null ? displayOrder[currentCard] : currentCard;
+        var card = cards[oi];
+        var sColor = selectedSection.color;
+        var im = mastered[selectedSection.id + "-" + oi];
+        var pPct = displayOrder.length > 0 ? ((currentCard + 1) / displayOrder.length) * 100 : 0;
 
         return (
-          <div ref={swipeRef} style={{ minHeight:"100vh",background:T.bg,fontFamily:font,color:T.textPrimary,maxWidth:480,margin:"0 auto" }}>
-            <Overlays />
-            {/* Reset confirm */}
-            {showResetConfirm && (
-              <div style={{ position:"fixed",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:T.overlay,zIndex:999,backdropFilter:"blur(8px)" }}>
-                <div style={{ background:T.card,borderRadius:16,padding:"28px 32px",border:`1px solid ${T.border}`,textAlign:"center" }}>
-                  <div style={{ fontSize:15,fontWeight:800,color:T.textPrimary,marginBottom:8 }}>Reset {selectedSection.title}?</div>
-                  <div style={{ fontSize:12,color:T.textSecondary,marginBottom:20 }}>All mastery progress for this section will be cleared.</div>
-                  <div style={{ display:"flex",gap:10 }}>
-                    <button onClick={() => setShowResetConfirm(false)} style={{ flex:1,padding:"10px",borderRadius:10,border:`1px solid ${T.border}`,background:"transparent",color:T.textSecondary,fontWeight:700,cursor:"pointer",fontFamily:font }}>Cancel</button>
-                    <button onClick={() => resetSection(selectedSection.id)} style={{ flex:1,padding:"10px",borderRadius:10,border:"none",background:"#FF4B4B",color:"#fff",fontWeight:700,cursor:"pointer",fontFamily:font }}>Reset</button>
-                  </div>
+          <div style={{minHeight:"100vh",background:T.bg,fontFamily:FONT,color:T.textPrimary,maxWidth:480,margin:"0 auto"}}>
+            {showCelebration && <div style={{position:"fixed",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:T.overlay,zIndex:999,animation:"fadeIn 0.3s ease",backdropFilter:"blur(8px)"}}>
+              <div style={{textAlign:"center",animation:"bounceIn 0.5s ease",background:T.card,borderRadius:20,padding:"36px 44px",border:"1px solid "+T.border}}>
+                <div style={{fontSize:18,fontWeight:800,color:T.textPrimary,marginBottom:6}}>DECK COMPLETE</div>
+                <div style={{fontSize:13,color:T.textSecondary,fontWeight:600}}>Every card mastered</div>
+              </div>
+            </div>}
+            {showStreakPopup && <div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",zIndex:1000,animation:"slideDown 0.4s ease"}}>
+              <div style={{background:T.card,border:"1px solid #FFC80044",borderRadius:14,padding:"14px 24px",display:"flex",alignItems:"center",gap:14}}>
+                <span style={{fontSize:22,color:"#FFC800",fontWeight:900}}>{dailyStreak}</span>
+                <div><div style={{fontSize:15,fontWeight:800,color:"#FFC800"}}>Day Streak!</div></div>
+              </div>
+            </div>}
+            {showResetConfirm && <div style={{position:"fixed",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:T.overlay,zIndex:999,backdropFilter:"blur(8px)"}}>
+              <div style={{background:T.card,borderRadius:16,padding:"28px 32px",border:"1px solid "+T.border,textAlign:"center"}}>
+                <div style={{fontSize:15,fontWeight:800,color:T.textPrimary,marginBottom:8}}>Reset {selectedSection.title}?</div>
+                <div style={{fontSize:12,color:T.textSecondary,marginBottom:20}}>All mastery for this section will be cleared.</div>
+                <div style={{display:"flex",gap:10}}>
+                  <button onClick={function() { setShowResetConfirm(false); }} style={{flex:1,padding:10,borderRadius:10,border:"1px solid "+T.border,background:"transparent",color:T.textSecondary,fontWeight:700,cursor:"pointer",fontFamily:FONT}}>Cancel</button>
+                  <button onClick={function() { resetSection(selectedSection.id); }} style={{flex:1,padding:10,borderRadius:10,border:"none",background:"#FF4B4B",color:"#fff",fontWeight:700,cursor:"pointer",fontFamily:FONT}}>Reset</button>
                 </div>
               </div>
-            )}
+            </div>}
 
-            <div style={{ display:"flex",alignItems:"center",padding:"16px 20px",borderBottom:`1px solid ${T.border}` }}>
-              <BackBtn onClick={goHome} />
-              <div style={{ flex:1,margin:"0 12px" }}>
-                <div style={{ height:4,background:T.card,borderRadius:4,overflow:"hidden" }}>
-                  <div style={{ height:"100%",width:`${pPct}%`,background:color,borderRadius:4,transition:"width 0.4s ease" }} />
-                </div>
-              </div>
-              <span style={{ color:T.textSecondary,fontSize:13,fontWeight:700 }}>{currentCard + 1}/{displayOrder.length}</span>
+            <div style={{display:"flex",alignItems:"center",padding:"16px 20px",borderBottom:"1px solid "+T.border}}>
+              <button onClick={goHome} style={{background:"none",border:"none",color:T.textSecondary,fontSize:14,cursor:"pointer",fontWeight:700,fontFamily:FONT}}>&#8592; Back</button>
+              <div style={{flex:1,margin:"0 12px"}}><div style={{height:4,background:T.card,borderRadius:4,overflow:"hidden"}}><div style={{height:"100%",width:pPct+"%",background:sColor,borderRadius:4,transition:"width 0.4s ease"}} /></div></div>
+              <span style={{color:T.textSecondary,fontSize:13,fontWeight:700}}>{currentCard + 1}/{displayOrder.length}</span>
             </div>
 
-            <div style={{ display:"flex",gap:8,padding:"10px 20px",justifyContent:"space-between",alignItems:"center" }}>
-              <button onClick={() => setShowResetConfirm(true)} style={{ padding:"5px 10px",borderRadius:8,fontSize:10,fontWeight:700,fontFamily:font,cursor:"pointer",border:`1px solid ${T.border}`,background:T.card,color:"#FF4B4B" }}>Reset</button>
-              <div style={{ display:"flex",gap:6 }}>
-                <button onClick={() => { const n = !shuffledMode; setShuffledMode(n); setCardOrder(buildCardOrder(selectedSection.id, cards, n, unmasteredOnly, mastered)); playSfx("nav"); setCurrentCard(0); setFlipped(false); }}
-                  style={{ padding:"5px 12px",borderRadius:8,fontSize:11,fontWeight:800,fontFamily:font,cursor:"pointer",border:`1px solid ${shuffledMode ? "#FFC800" : T.border}`,background:shuffledMode ? "rgba(255,200,0,0.1)" : T.card,color:shuffledMode ? "#FFC800" : T.textSecondary }}>Shuffle</button>
-                <button onClick={() => { const n = !unmasteredOnly; setUnmasteredOnly(n); setCardOrder(buildCardOrder(selectedSection.id, cards, shuffledMode, n, mastered)); playSfx("nav"); setCurrentCard(0); setFlipped(false); }}
-                  style={{ padding:"5px 12px",borderRadius:8,fontSize:11,fontWeight:800,fontFamily:font,cursor:"pointer",border:`1px solid ${unmasteredOnly ? "#1CB0F6" : T.border}`,background:unmasteredOnly ? "rgba(28,176,246,0.1)" : T.card,color:unmasteredOnly ? "#1CB0F6" : T.textSecondary }}>Unmastered</button>
+            <div style={{display:"flex",gap:8,padding:"10px 20px",justifyContent:"space-between"}}>
+              <button onClick={function() { setShowResetConfirm(true); }} style={{padding:"5px 10px",borderRadius:8,fontSize:10,fontWeight:700,fontFamily:FONT,cursor:"pointer",border:"1px solid "+T.border,background:T.card,color:"#FF4B4B"}}>Reset</button>
+              <div style={{display:"flex",gap:6}}>
+                <button onClick={function() { var n = !shuffledMode; setShuffledMode(n); setCardOrder(buildCardOrder(selectedSection.id, cards, n, unmasteredOnly, mastered)); playSfx("nav"); setCurrentCard(0); setFlipped(false); }}
+                  style={{padding:"5px 12px",borderRadius:8,fontSize:11,fontWeight:800,fontFamily:FONT,cursor:"pointer",border:"1px solid "+(shuffledMode?"#FFC800":T.border),background:shuffledMode?"rgba(255,200,0,0.1)":T.card,color:shuffledMode?"#FFC800":T.textSecondary}}>Shuffle</button>
+                <button onClick={function() { var n = !unmasteredOnly; setUnmasteredOnly(n); setCardOrder(buildCardOrder(selectedSection.id, cards, shuffledMode, n, mastered)); playSfx("nav"); setCurrentCard(0); setFlipped(false); }}
+                  style={{padding:"5px 12px",borderRadius:8,fontSize:11,fontWeight:800,fontFamily:FONT,cursor:"pointer",border:"1px solid "+(unmasteredOnly?"#1CB0F6":T.border),background:unmasteredOnly?"rgba(28,176,246,0.1)":T.card,color:unmasteredOnly?"#1CB0F6":T.textSecondary}}>Unmastered</button>
               </div>
             </div>
 
-            <div style={{ padding:"12px 20px 100px" }}>
-              <FlashCard card={card} color={color} flipped={flipped} onFlip={() => { playSfx("flip"); setFlipped(!flipped); if (!flipped) markStudied(selectedSection.id, oi); }} isMastered={im} />
+            <div style={{padding:"12px 20px 100px"}}>
+              <div onClick={function() { playSfx("flip"); setFlipped(!flipped); if (!flipped) markStudied(selectedSection.id, oi); }}
+                style={{background:flipped ? T.card : sColor,borderRadius:16,padding:28,minHeight:340,cursor:"pointer",display:"flex",flexDirection:"column",justifyContent:flipped?"flex-start":"center",alignItems:flipped?"flex-start":"center",border:flipped?"1px solid "+T.border:"none",boxShadow:flipped?"0 8px 32px rgba(0,0,0,0.3)":"0 6px 0 "+sColor+"66",transition:"all 0.25s ease",position:"relative"}}>
+                {!flipped ? (
+                  <React.Fragment>
+                    <div style={{fontSize:22,fontWeight:800,textAlign:"center",color:"#fff",textShadow:"0 2px 4px rgba(0,0,0,0.2)",lineHeight:1.3}}>{card ? card.t : ""}</div>
+                    <div style={{marginTop:18,fontSize:11,color:"rgba(255,255,255,0.6)",fontWeight:700,textTransform:"uppercase",letterSpacing:1.5}}>Tap to reveal</div>
+                  </React.Fragment>
+                ) : (
+                  <React.Fragment>
+                    <div style={{fontSize:13,fontWeight:800,color:sColor,marginBottom:10,textTransform:"uppercase",letterSpacing:0.5}}>{card ? card.t : ""}</div>
+                    <div style={{fontSize:13,lineHeight:1.75,color:T.textPrimary,whiteSpace:"pre-line",fontWeight:500,opacity:0.9}}>{card ? card.c : ""}</div>
+                    {im && <div style={{position:"absolute",top:14,right:14,background:"#58CC02",borderRadius:50,width:26,height:26,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#fff",fontWeight:800}}>&#10003;</div>}
+                  </React.Fragment>
+                )}
+              </div>
               {flipped ? (
-                <div style={{ display:"flex",gap:12,marginTop:16,animation:"slideUp 0.25s ease" }}>
-                  <button onClick={() => { playSfx("nav"); setFlipped(false); if (currentCard < displayOrder.length - 1) setCurrentCard(c => c + 1); }}
-                    style={{ flex:1,padding:"14px",borderRadius:12,border:`1px solid #FF4B4B`,background:"transparent",color:"#FF4B4B",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:font }}>STUDY AGAIN</button>
-                  <button onClick={() => { playSfx("gotIt"); markMastered(selectedSection.id, oi); setFlipped(false); if (currentCard < displayOrder.length - 1) setCurrentCard(c => c + 1); }}
-                    style={{ flex:1,padding:"14px",borderRadius:12,border:"none",background:"#58CC02",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:font,boxShadow:"0 3px 0 #46A302" }}>GOT IT</button>
+                <div style={{display:"flex",gap:12,marginTop:16,animation:"slideUp 0.25s ease"}}>
+                  <button onClick={function() { playSfx("nav"); setFlipped(false); if (currentCard < displayOrder.length - 1) setCurrentCard(currentCard + 1); }}
+                    style={{flex:1,padding:"14px",borderRadius:12,border:"1px solid #FF4B4B",background:"transparent",color:"#FF4B4B",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:FONT}}>STUDY AGAIN</button>
+                  <button onClick={function() { playSfx("gotIt"); markMastered(selectedSection.id, oi); setFlipped(false); if (currentCard < displayOrder.length - 1) setCurrentCard(currentCard + 1); }}
+                    style={{flex:1,padding:"14px",borderRadius:12,border:"none",background:"#58CC02",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:FONT,boxShadow:"0 3px 0 #46A302"}}>GOT IT</button>
                 </div>
               ) : (
-                <div style={{ display:"flex",justifyContent:"space-between",marginTop:16 }}>
-                  <button disabled={currentCard === 0} onClick={() => { playSfx("nav"); setCurrentCard(c => c - 1); setFlipped(false); }}
-                    style={{ padding:"12px 24px",borderRadius:12,border:`1px solid ${T.border}`,background:T.card,color:currentCard === 0 ? T.textMuted : T.textSecondary,fontSize:14,fontWeight:700,cursor:currentCard === 0 ? "default" : "pointer",fontFamily:font }}>Prev</button>
-                  <button disabled={currentCard === displayOrder.length - 1} onClick={() => { playSfx("nav"); setCurrentCard(c => c + 1); setFlipped(false); }}
-                    style={{ padding:"12px 24px",borderRadius:12,border:`1px solid ${T.border}`,background:T.card,color:currentCard === displayOrder.length - 1 ? T.textMuted : T.textSecondary,fontSize:14,fontWeight:700,cursor:currentCard === displayOrder.length - 1 ? "default" : "pointer",fontFamily:font }}>Next</button>
+                <div style={{display:"flex",justifyContent:"space-between",marginTop:16}}>
+                  <button disabled={currentCard === 0} onClick={function() { playSfx("nav"); setCurrentCard(currentCard - 1); setFlipped(false); }}
+                    style={{padding:"12px 24px",borderRadius:12,border:"1px solid "+T.border,background:T.card,color:currentCard === 0 ? T.textMuted : T.textSecondary,fontSize:14,fontWeight:700,cursor:currentCard === 0?"default":"pointer",fontFamily:FONT}}>Prev</button>
+                  <button disabled={currentCard === displayOrder.length - 1} onClick={function() { playSfx("nav"); setCurrentCard(currentCard + 1); setFlipped(false); }}
+                    style={{padding:"12px 24px",borderRadius:12,border:"1px solid "+T.border,background:T.card,color:currentCard === displayOrder.length - 1 ? T.textMuted : T.textSecondary,fontSize:14,fontWeight:700,cursor:currentCard === displayOrder.length - 1?"default":"pointer",fontFamily:FONT}}>Next</button>
                 </div>
               )}
-              <div style={{ textAlign:"center",fontSize:10,color:T.textMuted,fontWeight:600,marginTop:10 }}>Swipe or use Space / G / S / Arrows</div>
             </div>
-            <style>{GLOBAL_CSS}</style>
           </div>
         );
       }
 
-      /* ═══════════ HOME VIEW ═══════════ */
-      const mistakeCount = useMemo(() => {
-        let c = 0;
-        Object.keys(cardData).forEach(sid => { const st = progress[sid]?.cards || {};
-          cardData[sid].forEach((_, i) => { if (st[i] && !mastered[`${sid}-${i}`]) c++; });
-        });
-        return c;
-      }, [cardData, progress, mastered]);
-
+      /* ═══════════ RENDER: HOME ═══════════ */
       return (
-        <div style={{ minHeight:"100vh",background:T.bg,fontFamily:font,color:T.textPrimary,maxWidth:480,margin:"0 auto" }}>
+        <div style={{minHeight:"100vh",background:T.bg,fontFamily:FONT,color:T.textPrimary,maxWidth:480,margin:"0 auto"}}>
           {/* Top bar */}
-          <div style={{ padding:"20px 20px 0",display:"flex",alignItems:"center",justifyContent:"space-between" }}>
+          <div style={{padding:"20px 20px 0",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
             <div>
-              <div style={{ fontSize:20,fontWeight:900,letterSpacing:-0.3,color:T.textPrimary }}>Sec+ Cards</div>
-              <div style={{ color:T.textMuted,fontSize:11,fontWeight:600,marginTop:2 }}>SY0-701 Study Deck</div>
+              <div style={{fontSize:20,fontWeight:900,letterSpacing:-0.3}}>Sec+ Cards</div>
+              <div style={{color:T.textMuted,fontSize:11,fontWeight:600,marginTop:2}}>SY0-701 Study Deck</div>
             </div>
-            <div style={{ display:"flex",alignItems:"center",gap:8 }}>
-              <button onClick={() => setSoundEnabled(v => !v)} style={{ background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"6px 8px",cursor:"pointer",color:soundEnabled ? "#58CC02" : T.textMuted,fontSize:14,display:"flex",alignItems:"center" }}>{soundEnabled ? "\u{1F50A}" : "\u{1F507}"}</button>
-              <button onClick={() => setThemeName(t => t === "dark" ? "light" : "dark")} style={{ background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"6px 8px",cursor:"pointer",color:T.textSecondary,fontSize:14,display:"flex",alignItems:"center" }}>{themeName === "dark" ? "\u2600" : "\u263D"}</button>
-              <div style={{ background:dailyStreak > 0 ? "rgba(255,200,0,0.08)" : T.card,border:`1px solid ${dailyStreak > 0 ? "rgba(255,200,0,0.2)" : T.border}`,borderRadius:8,padding:"6px 12px",display:"flex",alignItems:"center",gap:6 }}>
-                <span style={{ fontWeight:900,color:dailyStreak > 0 ? "#FFC800" : T.textMuted,fontSize:14 }}>{dailyStreak}</span>
-                <span style={{ color:T.textMuted,fontSize:9,fontWeight:700 }}>day{dailyStreak !== 1 ? "s" : ""}</span>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <button onClick={function() { setSoundEnabled(!soundEnabled); }} style={{background:T.card,border:"1px solid "+T.border,borderRadius:8,padding:"6px 8px",cursor:"pointer",color:soundEnabled?"#58CC02":T.textMuted,fontSize:14,display:"flex",alignItems:"center"}}>{soundEnabled ? "\u{1F50A}" : "\u{1F507}"}</button>
+              <button onClick={function() { setThemeName(themeName === "dark" ? "light" : "dark"); }} style={{background:T.card,border:"1px solid "+T.border,borderRadius:8,padding:"6px 8px",cursor:"pointer",color:T.textSecondary,fontSize:14,display:"flex",alignItems:"center"}}>{themeName === "dark" ? "\u2600" : "\u263D"}</button>
+              <div style={{background:dailyStreak > 0 ? "rgba(255,200,0,0.08)" : T.card,border:"1px solid "+(dailyStreak > 0 ? "rgba(255,200,0,0.2)" : T.border),borderRadius:8,padding:"6px 12px",display:"flex",alignItems:"center",gap:6}}>
+                <span style={{fontWeight:900,color:dailyStreak > 0 ? "#FFC800" : T.textMuted,fontSize:14}}>{dailyStreak}</span>
+                <span style={{color:T.textMuted,fontSize:9,fontWeight:700}}>{dailyStreak === 1 ? "day" : "days"}</span>
               </div>
             </div>
           </div>
 
-          {/* Domain Progress Rings */}
-          <div style={{ padding:"16px 20px" }}>
-            <div style={{ background:T.card,borderRadius:14,padding:"16px 12px",border:`1px solid ${T.border}`,display:"flex",alignItems:"center",justifyContent:"space-between" }}>
-              {DOMAINS.map(d => {
-                const s = domainStats[d.label];
-                const pct = s.total > 0 ? Math.round((s.mastered / s.total) * 100) : 0;
-                return <ProgressRing key={d.key} pct={pct} color={d.color} size={50} stroke={4} label={d.short.split(":")[0]} theme={T} />;
+          {/* Progress Rings */}
+          <div style={{padding:"16px 20px"}}>
+            <div style={{background:T.card,borderRadius:14,padding:"16px 12px",border:"1px solid "+T.border,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              {DOMAINS.map(function(d) {
+                var s = domainStats[d.label];
+                var pct = s.total > 0 ? Math.round((s.mastered / s.total) * 100) : 0;
+                return React.createElement(ProgressRing, {key:d.key, pct:pct, color:d.color, size:48, stroke:4, label:d.short.split(":")[0], theme:T});
               })}
-              <div style={{ display:"flex",flexDirection:"column",alignItems:"center",gap:2 }}>
-                <div style={{ fontSize:22,fontWeight:900,color:T.textPrimary }}>{totalCards > 0 ? Math.round((totalMastered / totalCards) * 100) : 0}%</div>
-                <div style={{ fontSize:9,fontWeight:700,color:T.textMuted }}>TOTAL</div>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+                <div style={{fontSize:20,fontWeight:900,color:T.textPrimary}}>{totalCards > 0 ? Math.round((totalMastered / totalCards) * 100) : 0}%</div>
+                <div style={{fontSize:9,fontWeight:700,color:T.textMuted}}>TOTAL</div>
               </div>
             </div>
           </div>
 
           {/* Mode buttons */}
-          <div style={{ padding:"0 20px",display:"flex",gap:8,marginBottom:12 }}>
-            <button onClick={() => { setRandomPool(shuffle([...allCards])); setRandomIndex(0); setRandomCardsStudied(0); setFlipped(false); startSession(); playSfx("nav"); setView("random"); }}
-              style={{ flex:1,padding:"14px 12px",borderRadius:12,cursor:"pointer",fontFamily:font,background:T.card,border:`1px solid rgba(255,200,0,0.2)`,display:"flex",alignItems:"center",gap:10 }}>
-              <div style={{ width:36,height:36,borderRadius:8,background:"rgba(255,200,0,0.1)",display:"flex",alignItems:"center",justifyContent:"center" }}>
-                <span style={{ fontSize:13,fontWeight:900,color:"#FFC800" }}>?</span></div>
-              <div style={{ textAlign:"left" }}><div style={{ fontSize:13,fontWeight:800,color:T.textPrimary }}>Random</div><div style={{ fontSize:10,fontWeight:600,color:T.textSecondary }}>{totalCards} cards</div></div>
+          <div style={{padding:"0 20px",display:"flex",gap:8,marginBottom:12}}>
+            <button onClick={function() { setRandomPool(shuffleArray(allCards.slice())); setRandomIndex(0); setFlipped(false); playSfx("nav"); setView("random"); }}
+              style={{flex:1,padding:"14px 10px",borderRadius:12,cursor:"pointer",fontFamily:FONT,background:T.card,border:"1px solid rgba(255,200,0,0.2)",display:"flex",alignItems:"center",gap:8}}>
+              <div style={{width:32,height:32,borderRadius:8,background:"rgba(255,200,0,0.1)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <span style={{fontSize:12,fontWeight:900,color:"#FFC800"}}>?</span></div>
+              <div style={{textAlign:"left"}}><div style={{fontSize:12,fontWeight:800,color:T.textPrimary}}>Random</div><div style={{fontSize:9,fontWeight:600,color:T.textSecondary}}>{totalCards} cards</div></div>
             </button>
-            <button onClick={() => { const p = buildMistakePool(); setMistakePool(p); setMistakeIndex(0); setFlipped(false); startSession(); playSfx("nav"); setView("review"); }}
-              style={{ flex:1,padding:"14px 12px",borderRadius:12,cursor:"pointer",fontFamily:font,background:T.card,border:`1px solid rgba(255,75,75,0.2)`,display:"flex",alignItems:"center",gap:10 }}>
-              <div style={{ width:36,height:36,borderRadius:8,background:"rgba(255,75,75,0.1)",display:"flex",alignItems:"center",justifyContent:"center" }}>
-                <span style={{ fontSize:13,fontWeight:900,color:"#FF4B4B" }}>!</span></div>
-              <div style={{ textAlign:"left" }}><div style={{ fontSize:13,fontWeight:800,color:T.textPrimary }}>Review</div><div style={{ fontSize:10,fontWeight:600,color:T.textSecondary }}>{mistakeCount} to review</div></div>
+            <button onClick={function() { setMistakePool(buildMistakePool()); setMistakeIndex(0); setFlipped(false); playSfx("nav"); setView("review"); }}
+              style={{flex:1,padding:"14px 10px",borderRadius:12,cursor:"pointer",fontFamily:FONT,background:T.card,border:"1px solid rgba(255,75,75,0.2)",display:"flex",alignItems:"center",gap:8}}>
+              <div style={{width:32,height:32,borderRadius:8,background:"rgba(255,75,75,0.1)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <span style={{fontSize:12,fontWeight:900,color:"#FF4B4B"}}>!</span></div>
+              <div style={{textAlign:"left"}}><div style={{fontSize:12,fontWeight:800,color:T.textPrimary}}>Review</div><div style={{fontSize:9,fontWeight:600,color:T.textSecondary}}>{mistakeCount} cards</div></div>
             </button>
-            <button onClick={() => { const p = buildQuiz(); setQuizPool(p); setQuizIndex(0); setQuizScore(0); setQuizTotal(0); setQuizSelected(null); const ch = generateQuizChoices(p[0]); setQuizChoices(ch); startSession(); playSfx("nav"); setView("quiz"); }}
-              style={{ flex:1,padding:"14px 12px",borderRadius:12,cursor:"pointer",fontFamily:font,background:T.card,border:`1px solid rgba(28,176,246,0.2)`,display:"flex",alignItems:"center",gap:10 }}>
-              <div style={{ width:36,height:36,borderRadius:8,background:"rgba(28,176,246,0.1)",display:"flex",alignItems:"center",justifyContent:"center" }}>
-                <span style={{ fontSize:13,fontWeight:900,color:"#1CB0F6" }}>Q</span></div>
-              <div style={{ textAlign:"left" }}><div style={{ fontSize:13,fontWeight:800,color:T.textPrimary }}>Quiz</div><div style={{ fontSize:10,fontWeight:600,color:T.textSecondary }}>4-choice</div></div>
+            <button onClick={function() { var p = shuffleArray(allCards.slice()); setQuizPool(p); setQuizIndex(0); setQuizScore(0); setQuizTotal(0); setQuizSelected(null); setQuizChoices(generateQuizChoices(p[0])); playSfx("nav"); setView("quiz"); }}
+              style={{flex:1,padding:"14px 10px",borderRadius:12,cursor:"pointer",fontFamily:FONT,background:T.card,border:"1px solid rgba(28,176,246,0.2)",display:"flex",alignItems:"center",gap:8}}>
+              <div style={{width:32,height:32,borderRadius:8,background:"rgba(28,176,246,0.1)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <span style={{fontSize:12,fontWeight:900,color:"#1CB0F6"}}>Q</span></div>
+              <div style={{textAlign:"left"}}><div style={{fontSize:12,fontWeight:800,color:T.textPrimary}}>Quiz</div><div style={{fontSize:9,fontWeight:600,color:T.textSecondary}}>4-choice</div></div>
             </button>
           </div>
 
           {/* Search */}
-          <div style={{ padding:"0 20px 10px" }}>
-            <input type="text" placeholder="Search topics..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ width:"100%",padding:"10px 14px",borderRadius:10,border:`1px solid ${T.border}`,background:T.card,color:T.textPrimary,fontSize:12,fontWeight:600,outline:"none",fontFamily:font }} />
+          <div style={{padding:"0 20px 10px"}}>
+            <input type="text" placeholder="Search topics..." value={searchQuery} onChange={function(e) { setSearchQuery(e.target.value); }}
+              style={{width:"100%",padding:"10px 14px",borderRadius:10,border:"1px solid "+T.border,background:T.card,color:T.textPrimary,fontSize:12,fontWeight:600,outline:"none",fontFamily:FONT}} />
           </div>
 
           {/* Domain-grouped sections */}
-          <div style={{ padding:"0 20px 40px" }}>
-            {DOMAINS.map(domain => {
-              const sections = SECTIONS_META.filter(s => s.domain === domain.label);
-              const filtered = searchQuery ? sections.filter(s => s.title.toLowerCase().includes(searchQuery.toLowerCase())) : sections;
+          <div style={{padding:"0 20px 40px"}}>
+            {DOMAINS.map(function(domain) {
+              var sections = SECTIONS_META.filter(function(s) { return s.domain === domain.label; });
+              var filtered = searchQuery ? sections.filter(function(s) { return s.title.toLowerCase().indexOf(searchQuery.toLowerCase()) >= 0; }) : sections;
               if (filtered.length === 0) return null;
-              const collapsed = collapsedDomains[domain.key];
-              const ds = domainStats[domain.label];
-              const dPct = ds.total > 0 ? Math.round((ds.mastered / ds.total) * 100) : 0;
+              var collapsed = collapsedDomains[domain.key];
+              var ds = domainStats[domain.label];
+              var dPct = ds.total > 0 ? Math.round((ds.mastered / ds.total) * 100) : 0;
 
               return (
-                <div key={domain.key} style={{ marginBottom:8 }}>
-                  <button onClick={() => setCollapsedDomains(p => ({ ...p, [domain.key]: !p[domain.key] }))}
-                    style={{ width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 0",border:"none",background:"transparent",cursor:"pointer",fontFamily:font }}>
-                    <div style={{ display:"flex",alignItems:"center",gap:8 }}>
-                      <div style={{ width:4,height:20,borderRadius:2,background:domain.color }} />
-                      <span style={{ fontSize:12,fontWeight:800,color:domain.color }}>{domain.short}</span>
-                      <span style={{ fontSize:10,fontWeight:600,color:T.textMuted }}>{ds.mastered}/{ds.total}</span>
+                <div key={domain.key} style={{marginBottom:8}}>
+                  <button onClick={function() { setCollapsedDomains(function(p) { var up = Object.assign({}, p); up[domain.key] = !up[domain.key]; return up; }); }}
+                    style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 0",border:"none",background:"transparent",cursor:"pointer",fontFamily:FONT}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <div style={{width:4,height:20,borderRadius:2,background:domain.color}} />
+                      <span style={{fontSize:12,fontWeight:800,color:domain.color}}>{domain.short}</span>
+                      <span style={{fontSize:10,fontWeight:600,color:T.textMuted}}>{ds.mastered}/{ds.total}</span>
                     </div>
-                    <div style={{ display:"flex",alignItems:"center",gap:8 }}>
-                      <span style={{ fontSize:11,fontWeight:800,color:dPct > 0 ? domain.color : T.textMuted }}>{dPct}%</span>
-                      <span style={{ fontSize:12,color:T.textMuted,transform: collapsed ? "rotate(-90deg)" : "rotate(0deg)",transition:"transform 0.2s ease" }}>&#9660;</span>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <span style={{fontSize:11,fontWeight:800,color:dPct > 0 ? domain.color : T.textMuted}}>{dPct}%</span>
+                      <span style={{fontSize:12,color:T.textMuted,transform:collapsed?"rotate(-90deg)":"rotate(0deg)",transition:"transform 0.2s ease",display:"inline-block"}}>&#9660;</span>
                     </div>
                   </button>
 
-                  {!collapsed && filtered.map((section, i) => {
-                    const sc = cardData?.[section.id] || [];
-                    const mc = sc.filter((_, idx) => mastered[`${section.id}-${idx}`]).length;
-                    const pct = sc.length > 0 ? Math.round((mc / sc.length) * 100) : 0;
-                    const isComplete = pct === 100;
+                  {!collapsed && filtered.map(function(section, i) {
+                    var sc = cardData[section.id] || [];
+                    var mc = sc.filter(function(_, idx) { return mastered[section.id + "-" + idx]; }).length;
+                    var pct = sc.length > 0 ? Math.round((mc / sc.length) * 100) : 0;
+                    var isComplete = pct === 100;
 
                     return (
-                      <div key={section.id} onClick={() => {
-                        const order = buildCardOrder(section.id, sc, shuffledMode, unmasteredOnly, mastered);
-                        playSfx("nav"); setCardOrder(order); setSelectedSection(section); setCurrentCard(0); setFlipped(false); startSession(); setView("study");
+                      <div key={section.id} onClick={function() {
+                        var order = buildCardOrder(section.id, sc, shuffledMode, unmasteredOnly, mastered);
+                        playSfx("nav"); setCardOrder(order); setSelectedSection(section); setCurrentCard(0); setFlipped(false); setView("study");
                       }} style={{
                         background:T.card,borderRadius:10,padding:"14px 16px",marginBottom:8,cursor:"pointer",
-                        border:`1px solid ${T.border}`,borderLeft:`3px solid ${domain.color}`,
-                        transition:"background 0.15s ease", animation:`slideUp 0.2s ease ${i * 0.02}s both`,
+                        border:"1px solid "+T.border,borderLeft:"3px solid "+domain.color,
+                        transition:"background 0.15s ease",animation:"slideUp 0.2s ease " + (i * 0.02) + "s both",
                       }}
-                      onMouseEnter={e => e.currentTarget.style.background = T.cardHover}
-                      onMouseLeave={e => e.currentTarget.style.background = T.card}>
-                        <div style={{ display:"flex",alignItems:"center",gap:12 }}>
-                          <div style={{ width:36,height:36,borderRadius:8,flexShrink:0,background:`${domain.color}12`,border:`1px solid ${domain.color}30`,display:"flex",alignItems:"center",justifyContent:"center" }}>
-                            {isComplete ? <span style={{ color:"#58CC02",fontSize:14,fontWeight:900 }}>&#10003;</span>
-                              : <div style={{ width:8,height:8,borderRadius:2,background:domain.color,opacity:0.7 }} />}
+                      onMouseEnter={function(e) { e.currentTarget.style.background = T.cardHover; }}
+                      onMouseLeave={function(e) { e.currentTarget.style.background = T.card; }}>
+                        <div style={{display:"flex",alignItems:"center",gap:12}}>
+                          <div style={{width:36,height:36,borderRadius:8,flexShrink:0,background:domain.color+"12",border:"1px solid "+domain.color+"30",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                            {isComplete ? <span style={{color:"#58CC02",fontSize:14,fontWeight:900}}>&#10003;</span>
+                              : <div style={{width:8,height:8,borderRadius:2,background:domain.color,opacity:0.7}} />}
                           </div>
-                          <div style={{ flex:1,minWidth:0 }}>
-                            <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4 }}>
-                              <div style={{ fontSize:13,fontWeight:800,color:T.textPrimary }}>{section.title}</div>
-                              <span style={{ fontSize:11,fontWeight:800,color:mc > 0 ? domain.color : T.textMuted,flexShrink:0,marginLeft:8 }}>{mc}/{sc.length}</span>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                              <div style={{fontSize:13,fontWeight:800,color:T.textPrimary}}>{section.title}</div>
+                              <span style={{fontSize:11,fontWeight:800,color:mc > 0 ? domain.color : T.textMuted,flexShrink:0,marginLeft:8}}>{mc}/{sc.length}</span>
                             </div>
-                            <div style={{ height:3,background:`${T.textMuted}33`,borderRadius:2,overflow:"hidden" }}>
-                              <div style={{ height:"100%",width:`${pct}%`,background:domain.color,borderRadius:2,transition:"width 0.5s ease" }} />
+                            <div style={{height:3,background:T.textMuted+"33",borderRadius:2,overflow:"hidden"}}>
+                              <div style={{height:"100%",width:pct+"%",background:domain.color,borderRadius:2,transition:"width 0.5s ease"}} />
                             </div>
                           </div>
                         </div>
@@ -1053,7 +902,6 @@
               );
             })}
           </div>
-          <style>{GLOBAL_CSS}</style>
         </div>
       );
     }
@@ -1063,8 +911,11 @@
 
   <script>
     if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./sw.js").then(r => console.log("SW:", r.scope), e => console.log("SW fail:", e));
+      window.addEventListener("load", function() {
+        navigator.serviceWorker.register("./sw.js").then(
+          function(r) { console.log("SW:", r.scope); },
+          function(e) { console.log("SW fail:", e); }
+        );
       });
     }
   </script>
